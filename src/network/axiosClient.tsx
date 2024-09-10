@@ -26,15 +26,15 @@ const axiosClient = axios.create({
 //     (error) => Promise.reject(error),
 //   );
 
-axiosClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    let res = error.response;
-    if (res && res.status == 401) {
-      // TODO: Handle unauthorised error
-    }
-    return Promise.reject(error);
-  }
-);
+// axiosClient.interceptors.response.use(
+//   (response) => response,
+//   (error) => {
+//     let res = error.response;
+//     if (res && res.status == 401) {
+//       // TODO: Handle unauthorised error
+//     }
+//     return Promise.reject(error);
+//   }
+// );
 
 export default axiosClient;
