@@ -20,4 +20,4 @@ npm run dev
 
 3. For file organisation, would be cleaner to have a src/components and put those components into src/pages
 
-test - by Jy (will delete later)
+
