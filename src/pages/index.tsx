@@ -1,11 +1,12 @@
-import {Button} from "@/components/components/button"
+import FeaturedVouchers from '../components/home/FeaturedVouchers';
+import Hero from '../components/home/Hero';
 
 function HomePage() {
-  return <div>
-    <h1 className='text-3xl'>HomePage</h1>
-    <Button variant='outline' size='lg' className = "capitalize m-8">
-      Click me
-    </Button>
-  </div>
+  return (
+    <>
+      <Hero />
+      <FeaturedVouchers />
+    </>
+  );
 }
 export default HomePage;

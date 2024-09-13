@@ -10,11 +10,13 @@ function Navbar() {
     <nav className='border-b'>
       <Container className='flex flex-col sm:flex-row sm:justify-between sm:items-center flex-wrap py-8 gap-4'>
         <Logo />
-        <Suspense>
-          <NavSearch />
-        </Suspense>
+        <div className='flex-grow flex justify-center sm:justify-end'>
+          <Suspense>
+            <NavSearch />
+          </Suspense>
+        </div>
         <div className='flex gap-4 items-center'>
-          <CartButton />
+      
           <DarkMode />
           <LinksDropdown />
         </div>
