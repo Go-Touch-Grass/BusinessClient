@@ -1,49 +1,65 @@
-import { useState } from 'react';
+import { useState, useRef, FormEvent } from "react";
+import api from "@/api";
 
 const SignUpPage = () => {
+  // Define state variables
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Define refs for the form fields
+  const firstNameRef = useRef<HTMLInputElement | null>(null);
+  const lastNameRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const userNameRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement | null>(null);
+
+  // Handle form submission
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError(null);
+    setSuccess(null);
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    try {
-      const response = await fetch('/api/merchant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          password,
-        }),
-      });
+    // Ensure refs are not null
+    if (
+      firstNameRef.current &&
+      lastNameRef.current &&
+      emailRef.current &&
+      userNameRef.current &&
+      passwordRef.current &&
+      confirmPasswordRef.current
+    ) {
+      try {
+        const response = await api.post('/api/business/account', {
+          firstName: firstNameRef.current.value,
+          lastName: lastNameRef.current.value,
+          email: emailRef.current.value,
+          username: userNameRef.current.value,
+          password: passwordRef.current.value,
+        });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Handle successful response
-        console.log('Merchant created:', data);
-        // Redirect or show success message
-      } else {
-        // Handle errors
-        setError(data.message || 'Something went wrong');
+        if (response.status === 201) {
+          setSuccess('Account created successfully!');
+        } else {
+          setError(response.data.message || 'Something went wrong');
+        }
+      } catch (err) {
+        setError('An error occurred');
+        console.error('API call error:', err);
       }
-    } catch (err) {
-      setError('An error occurred');
-      console.error(err);
+    } else {
+      setError('Form fields are not properly initialized');
     }
   };
 
@@ -60,8 +76,7 @@ const SignUpPage = () => {
               id='firstName'
               type='text'
               placeholder='John'
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              ref={firstNameRef}
               className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300 sm:text-sm'
               required
             />
@@ -74,8 +89,7 @@ const SignUpPage = () => {
               id='lastName'
               type='text'
               placeholder='Doe'
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              ref={lastNameRef}
               className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300 sm:text-sm'
               required
             />
@@ -88,12 +102,26 @@ const SignUpPage = () => {
               id='email'
               type='email'
               placeholder='you@example.com'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              ref={emailRef}
               className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300 sm:text-sm'
               required
             />
           </div>
+
+          <div className='mb-4'>
+            <label htmlFor='userame' className='block text-sm font-medium text-gray-600'>
+              Username
+            </label>
+            <input
+              id='username'
+              type='text' 
+              placeholder='john_doe'
+              ref={userNameRef}
+              className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300 sm:text-sm'
+              required
+            />
+          </div>
+
           <div className='mb-4'>
             <label htmlFor='password' className='block text-sm font-medium text-gray-600'>
               Password
@@ -102,8 +130,7 @@ const SignUpPage = () => {
               id='password'
               type='password'
               placeholder='********'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              ref={passwordRef}
               className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300 sm:text-sm'
               required
             />
@@ -116,13 +143,13 @@ const SignUpPage = () => {
               id='confirm-password'
               type='password'
               placeholder='********'
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              ref={confirmPasswordRef}
               className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300 sm:text-sm'
               required
             />
           </div>
           {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
+          {success && <p className='text-green-500 text-sm mb-4'>{success}</p>}
           <button
             type='submit'
             className='w-full bg-blue-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:ring-offset-2'
