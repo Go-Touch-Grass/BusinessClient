@@ -4,6 +4,8 @@ import { Label } from '../components/components/ui/label';
 import { Input } from '../components/components/ui/input';
 import { Button } from '../components/components/ui/button';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/router';
+import withAuth from './withAuth';
 
 interface BusinessAccount {
   firstName: string;
@@ -22,6 +24,8 @@ const ProfilePage: React.FC = () => {
     email: '',
     username: ''
   });
+  
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -83,13 +87,31 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    clearAllCookies(); 
+    router.push('/Login'); 
+
+    
+    console.log('Logout process initiated');
+
+    
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.href);
+    }
+  };
+
+  const clearAllCookies = () => {
+    const allCookies = Cookies.get();
+    Object.keys(allCookies).forEach(cookieName => Cookies.remove(cookieName));
+    console.log('All cookies cleared:', Cookies.get()); 
+  };
+
   return (
     <div className='px-4 space-y-6 md:px-6'>
       <header className='space-y-1.5'>
         <div className='flex items-center space-x-4'>
           <img
-           src='/images/profile.png' alt='Profile' 
-            
+            src='/images/profile.png' alt='Profile' 
             width='96'
             height='96'
             className='border rounded-full'
@@ -146,7 +168,6 @@ const ProfilePage: React.FC = () => {
                 id='username'
                 placeholder='Enter your username'
                 value={formData.username}
-                onChange={handleInputChange}
                 disabled
               />
             </div>
@@ -161,6 +182,9 @@ const ProfilePage: React.FC = () => {
               Save Changes
             </Button>
           )}
+          <Button onClick={handleLogout} className='bg-red-500 hover:bg-red-600'>
+            Log Out
+          </Button>
         </div>
         {error && <p className='text-red-500 text-sm'>{error}</p>}
       </div>
@@ -168,4 +192,4 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-export default ProfilePage;
+export default withAuth(ProfilePage);

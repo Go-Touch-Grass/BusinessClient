@@ -2,7 +2,7 @@ import { useState, useRef, FormEvent } from "react";
 import api from "@/api";
 
 const SignUpPage = () => {
-  // Define state variables
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -12,15 +12,15 @@ const SignUpPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Define refs for the form fields
+
   const firstNameRef = useRef<HTMLInputElement | null>(null);
   const lastNameRef = useRef<HTMLInputElement | null>(null);
   const emailRef = useRef<HTMLInputElement | null>(null);
   const userNameRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
   const confirmPasswordRef = useRef<HTMLInputElement | null>(null);
+  
 
-  // Handle form submission
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -31,7 +31,6 @@ const SignUpPage = () => {
       return;
     }
 
-    // Ensure refs are not null
     if (
       firstNameRef.current &&
       lastNameRef.current &&
