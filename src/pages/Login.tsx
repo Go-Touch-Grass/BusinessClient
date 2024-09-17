@@ -2,11 +2,13 @@ import { useState, useRef, FormEvent } from "react";
 import { useRouter } from "next/router";
 import api from "@/api";
 import Cookies from 'js-cookie'; // Import js-cookie
+import { useAuth } from "./AuthContext";
 
 const Login = () => {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { setIsLoggedIn } = useAuth();
 
   const usernameRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
@@ -26,14 +28,16 @@ const Login = () => {
         if (response.status === 200) {
           setSuccess('Login successful!');
 
-
           Cookies.set('username', usernameRef.current.value, {
             path: '/',
             expires: 7,
             secure: process.env.NODE_ENV === 'production', // Use Secure cookies in production
             sameSite: 'Lax' // Adjust based on your requirements
           });
-          console.log('Cookie set:', Cookies.get('username')); // Log the cookie value to verify it's set
+          //console.log('Cookie set:', Cookies.get('username')); // Log the cookie value to verify it's set
+
+          // Update authentication state
+          setIsLoggedIn(true);
 
           router.push(`/profile/`);
         } else {

@@ -1,3 +1,8 @@
+/*
+Note: No longer in use. Links are moved to navbar component, LinksDropdown.tsx.
+
+*/
+/*
 type NavLink = {
     href: string;
     label: string;
@@ -11,3 +16,4 @@ type NavLink = {
     { href: '/cart', label: 'cart' },
     { href: '/orders', label: 'orders' },
   ];
+  */
