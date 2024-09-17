@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '@/api'; 
+import api from '@/api';
 import { Label } from '../components/components/ui/label';
 import { Input } from '../components/components/ui/input';
 import { Button } from '../components/components/ui/button';
@@ -8,188 +8,212 @@ import { useRouter } from 'next/router';
 import withAuth from './withAuth';
 
 interface BusinessAccount {
-  firstName: string;
-  lastName: string;
-  email: string;
-  username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    username: string;
+}
+
+interface Outlet {
+    outlet_name: string;
+    location: string;
+    contact: string;
+    description: string;
 }
 
 const ProfilePage: React.FC = () => {
-  const [profile, setProfile] = useState<BusinessAccount | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [formData, setFormData] = useState<BusinessAccount>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    username: ''
-  });
-  
-  const router = useRouter();
+    const [profile, setProfile] = useState<BusinessAccount | null>(null);
+    const [outlets, setOutlets] = useState<Outlet[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const [isEditing, setIsEditing] = useState<boolean>(false);
+    const [formData, setFormData] = useState<BusinessAccount>({
+        firstName: '',
+        lastName: '',
+        email: '',
+        username: ''
+    });
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const username = Cookies.get('username');
-        if (!username) {
-          setError('No username found in cookies');
-          return;
-        }
-        const response = await api.get(`/api/business/profile/${username}`);
+    const router = useRouter();
 
-        if (response.status === 200) {
-          setProfile(response.data);
-          setFormData(response.data); // Set initial form data
-        } else {
-          setError(response.data.message || 'Failed to fetch profile');
-        }
-      } catch (err) {
-        setError('An error occurred while fetching profile');
-        console.error('API call error:', err);
-      }
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const username = Cookies.get('username');
+                if (!username) {
+                    setError('No username found in cookies');
+                    return;
+                }
+                const response = await api.get(`/api/business/profile/${username}`);
+                
+                if (response.status === 200) {
+                    setProfile(response.data.business);
+                    setOutlets(response.data.outlets);
+                    setFormData(response.data.business); // Set initial form data
+                } else {
+                    setError(response.data.message || 'Failed to fetch profile');
+                }
+            } catch (err) {
+                setError('An error occurred while fetching profile');
+                console.error('API call error:', err);
+            }
+        };
+
+        fetchProfile();
+    }, []);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setFormData(prevData => ({
+            ...prevData,
+            [id]: value
+        }));
     };
 
-    fetchProfile();
-  }, []);
+    const handleEditToggle = () => {
+        setIsEditing(prev => !prev);
+    };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [id]: value
-    }));
-  };
+    const handleUpdateProfile = async () => {
+        try {
+            const username = Cookies.get('username');
+            if (!username) {
+                setError('No username found in cookies');
+                return;
+            }
 
-  const handleEditToggle = () => {
-    setIsEditing(prev => !prev);
-  };
+            const response = await api.put(`/api/business/profile/${username}`, formData);
 
-  const handleUpdateProfile = async () => {
-    try {
-      const username = Cookies.get('username');
-      if (!username) {
-        setError('No username found in cookies');
-        return;
-      }
+            if (response.status === 200) {
+                setProfile(formData); 
+                setIsEditing(false); 
+                setError(null);
+            } else {
+                setError(response.data.message || 'Failed to update profile');
+            }
+        } catch (err) {
+            setError('An error occurred while updating profile');
+            console.error('API call error:', err);
+        }
+    };
 
-      const response = await api.put(`/api/business/profile/${username}`, formData);
+    const handleLogout = () => {
+        clearAllCookies(); 
+        router.push('/Login'); 
 
-      if (response.status === 200) {
-        setProfile(formData); 
-        setIsEditing(false); 
-        setError(null);
-      } else {
-        setError(response.data.message || 'Failed to update profile');
-      }
-    } catch (err) {
-      setError('An error occurred while updating profile');
-      console.error('API call error:', err);
-    }
-  };
+        console.log('Logout process initiated');
 
-  const handleLogout = () => {
-    clearAllCookies(); 
-    router.push('/Login'); 
+        if (typeof window !== 'undefined') {
+            window.history.replaceState(null, '', window.location.href);
+        }
+    };
 
-    
-    console.log('Logout process initiated');
+    const clearAllCookies = () => {
+        const allCookies = Cookies.get();
+        Object.keys(allCookies).forEach(cookieName => Cookies.remove(cookieName));
+        console.log('All cookies cleared:', Cookies.get()); 
+    };
 
-    
-    if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', window.location.href);
-    }
-  };
-
-  const clearAllCookies = () => {
-    const allCookies = Cookies.get();
-    Object.keys(allCookies).forEach(cookieName => Cookies.remove(cookieName));
-    console.log('All cookies cleared:', Cookies.get()); 
-  };
-
-  return (
-    <div className='px-4 space-y-6 md:px-6'>
-      <header className='space-y-1.5'>
-        <div className='flex items-center space-x-4'>
-          <img
-            src='/images/profile.png' alt='Profile' 
-            width='96'
-            height='96'
-            className='border rounded-full'
-            style={{ aspectRatio: '96/96', objectFit: 'cover' }}
-          />
-          <div className='space-y-1.5'>
-            <h1 className='text-2xl font-bold'>
-              {profile ? `${profile.firstName} ${profile.lastName}` : 'Loading...'}
-            </h1>
-            <p className='text-gray-500 dark:text-gray-400'>
-              {profile ? profile.username : ''}
-            </p>
-          </div>
+    return (
+        <div className='px-4 space-y-6 md:px-6'>
+            <header className='space-y-1.5'>
+                <div className='flex items-center space-x-4'>
+                    <img
+                        src='/images/profile.png' alt='Profile' 
+                        width='96'
+                        height='96'
+                        className='border rounded-full'
+                        style={{ aspectRatio: '96/96', objectFit: 'cover' }}
+                    />
+                    <div className='space-y-1.5'>
+                        <h1 className='text-2xl font-bold'>
+                            {profile ? `${profile.firstName} ${profile.lastName}` : 'Loading...'}
+                        </h1>
+                        <p className='text-gray-500 dark:text-gray-400'>
+                            {profile ? profile.username : ''}
+                        </p>
+                    </div>
+                </div>
+            </header>
+            <div className='space-y-6'>
+                <div className='space-y-2'>
+                    <h2 className='text-lg font-semibold'>Personal Information</h2>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        <div>
+                            <Label htmlFor='firstName'>First Name</Label>
+                            <Input
+                                id='firstName'
+                                placeholder='Enter your first name'
+                                value={formData.firstName}
+                                onChange={handleInputChange}
+                                disabled={!isEditing}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor='lastName'>Last Name</Label>
+                            <Input
+                                id='lastName'
+                                placeholder='Enter your last name'
+                                value={formData.lastName}
+                                onChange={handleInputChange}
+                                disabled={!isEditing}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor='email'>Email</Label>
+                            <Input
+                                id='email'
+                                placeholder='Enter your email'
+                                type='email'
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                disabled={!isEditing}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor='username'>Username</Label>
+                            <Input
+                                id='username'
+                                placeholder='Enter your username'
+                                value={formData.username}
+                                disabled={!isEditing}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className='space-y-6'>
+                    <h2 className='text-lg font-semibold'>Your Outlets</h2>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        {outlets.length === 0 ? (
+                            <p>No outlets found.</p>
+                        ) : (
+                            outlets.map(outlet => (
+                                <div key={outlet.outlet_name} className='border p-4 rounded-lg'>
+                                    <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
+                                    <p><strong>Location:</strong> {outlet.location}</p>
+                                    <p><strong>Contact:</strong> {outlet.contact}</p>
+                                    <p><strong>Description:</strong> {outlet.description}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+                <div className='flex space-x-4'>
+                    <Button onClick={handleEditToggle}>
+                        {isEditing ? 'Cancel' : 'Edit Profile'}
+                    </Button>
+                    {isEditing && (
+                        <Button onClick={handleUpdateProfile} className='bg-blue-500 hover:bg-blue-600'>
+                            Save Changes
+                        </Button>
+                    )}
+                    <Button onClick={handleLogout} className='bg-red-500 hover:bg-red-600'>
+                        Log Out
+                    </Button>
+                </div>
+                {error && <p className='text-red-500 text-sm'>{error}</p>}
+            </div>
         </div>
-      </header>
-      <div className='space-y-6'>
-        <div className='space-y-2'>
-          <h2 className='text-lg font-semibold'>Personal Information</h2>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <div>
-              <Label htmlFor='firstName'>First Name</Label>
-              <Input
-                id='firstName'
-                placeholder='Enter your first name'
-                value={formData.firstName}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <Label htmlFor='lastName'>Last Name</Label>
-              <Input
-                id='lastName'
-                placeholder='Enter your last name'
-                value={formData.lastName}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <Label htmlFor='email'>Email</Label>
-              <Input
-                id='email'
-                placeholder='Enter your email'
-                type='email'
-                value={formData.email}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <Label htmlFor='username'>Username</Label>
-              <Input
-                id='username'
-                placeholder='Enter your username'
-                value={formData.username}
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-        </div>
-        <div className='flex space-x-4'>
-          <Button onClick={handleEditToggle}>
-            {isEditing ? 'Cancel' : 'Edit Profile'}
-          </Button>
-          {isEditing && (
-            <Button onClick={handleUpdateProfile} className='bg-blue-500 hover:bg-blue-600'>
-              Save Changes
-            </Button>
-          )}
-          <Button onClick={handleLogout} className='bg-red-500 hover:bg-red-600'>
-            Log Out
-          </Button>
-        </div>
-        {error && <p className='text-red-500 text-sm'>{error}</p>}
-      </div>
-    </div>
-  );
+    );
 };
 
 export default withAuth(ProfilePage);
