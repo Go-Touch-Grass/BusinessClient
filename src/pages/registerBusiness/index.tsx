@@ -2,6 +2,8 @@ import { useState } from 'react';
 //import axiosClient from '../network/axiosClient';
 import { useRouter } from 'next/router';
 
+import Cookies from 'js-cookie';
+
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -20,7 +22,6 @@ import {
 import { Input } from '@/components/components/ui/input';
 
 // Radiogrp - https://ui.shadcn.com/docs/components/radio-group#form
-import { label } from '@/components/Register/ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/Register/ui/radio-group"
 
 //Hovercard - https://ui.shadcn.com/docs/components/hover-card
@@ -29,12 +30,20 @@ import {
     HoverCardContent,
     HoverCardTrigger,
 } from "@/components/Register/ui/hover-card"
+import api from '@/api';
+
+
 
 const formSchema = z.object({
 
-    entityName: z.string().min(2, {
-        message: "Business Entity name must be at least 2 characters.",
-    }).max(100),
+    entityName: z
+        .string()
+        .min(2, {
+            message: "Business Entity name must be at least 2 characters.",
+        })
+        .regex(/(Pte\s*Ltd|Ltd|Unlimited)\s*$/i, { // \s* any spaces before or after, /i case insensitive
+            message: 'Business name must end with "Pte Ltd", "Ltd", or "Unlimited".',
+        }).max(100),
     location: z.string().min(10, {
         message: "location must be at least 10 characters.",
     }).max(100),
@@ -42,11 +51,32 @@ const formSchema = z.object({
         required_error: "You need to select a notification type.",
         message: "Please select a valid category.",
     }),
+    proof: z
+        .any()
+        .refine((file) => {
+            console.log(file); // Check what is being passed here
+            return !!file;
+        }, {
+            message: "File is required",
+        })
+        .refine((files) => files[0]?.size <= 5000000, {
+            message: "File size should be less than 5MB",
+        })
+        .refine((files) => ["application/pdf", "image/jpeg", "image/png"].includes(files[0]?.type), {
+            message: "File must be a PDF, JPG, or PNG"
+        }), // Check the file type
+
+
 })
 
 const Register = () => {
 
     const router = useRouter();
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
+    const [businessType, setBusinessType] = useState("Pte Ltd"); // Default value for dropdown
+    const [combinedName, setCombinedName] = useState(""); // To store combined name (input + dropdown)
+
 
     // 1. Define your form, Initialize the useForm hook with zod schema validation
     const form = useForm<z.infer<typeof formSchema>>({
@@ -54,7 +84,8 @@ const Register = () => {
         defaultValues: {
             entityName: "",
             location: "",
-            category: "",
+            category: undefined,
+            proof: null,
         },
     })
 
@@ -63,9 +94,22 @@ const Register = () => {
         // Do something with the form values.
         // ✅ This will be type-safe and validated.
         console.log(values)
+        const formData = new FormData();
+        formData.append("entityName", values.entityName);
+        formData.append("location", values.location);
+        formData.append("category", values.category);
+        formData.append("proof", values.proof[0]); // Add the uploaded file
+
+        const username = Cookies.get('username');
+        if (!username) {
+            setError('No username found in cookies');
+            return;
+        }
+        formData.append("username", username);
+
         /* TO ADD IN IN FUTUR
             try {
-              const response = await axiosClient.post('/api/business/register', {
+              const response = await axiosClient.post('/api/business/registerBusiness', {
                 entityName: values.entityName,
                 location: values.location,
                 category: values.category,
@@ -78,6 +122,26 @@ const Register = () => {
               console.log('Registration failed. Please try again.');
             }
         */
+
+        try {
+            const response = await api.post('/api/business/registerBusiness', formData, { //route need match backend.
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            if (response.status === 201 || response.status === 200) {
+                setSuccess('Successfully applied!');
+                // Redirect to status page
+                router.push('/registerBusiness/status');
+            } else {
+                setError(response.data.message || 'Something went wrong');
+            }
+        } catch (err) {
+            setError('An error occurred');
+            console.log('API call error:', err);
+        }
+
     }
 
     return (
@@ -90,11 +154,16 @@ const Register = () => {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Business Entity Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Your Business Name" {...field} />
-                            </FormControl>
+                            {/* Container with flexbox to position input and dropdown side by side */}
+                            <div className="flex items-center space-x-4">
+                                {/* Input for entity name */}
+                                <FormControl>
+                                    <Input placeholder="Your Business Name" {...field}
+                                    />
+                                </FormControl>
+                            </div>
                             <FormDescription>
-                                This is the name of your business entity.
+                                This is the name of your business entity, must include "Pte Ltd", "Ltd", or "Unlimited".
                             </FormDescription>
                             <FormMessage />
                         </FormItem>
@@ -209,6 +278,28 @@ const Register = () => {
                     )}
                 />
 
+
+                {/* File Upload for Business Proof */}
+                <FormField
+                    control={form.control}
+                    name="proof"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Upload Proof (PDF, JPG, PNG)</FormLabel>
+                            <FormControl>
+                                {/*<Input type="file" accept=".pdf, .jpg, .png" {...field} /> */}
+                                <Input
+                                    type="file"
+                                    accept=".pdf, .jpg, .png"
+                                    onChange={(e) => field.onChange(e.target.files)} // Handle files correctly
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
+                {success && <p className='text-green-500 text-sm mb-4'>{success}</p>}
                 <Button type="submit">Register</Button>
             </form>
         </Form>

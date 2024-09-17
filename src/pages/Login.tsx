@@ -1,6 +1,6 @@
 import { useState, useRef, FormEvent } from "react";
 import { useRouter } from "next/router";
-import api from "@/api"; 
+import api from "@/api";
 import Cookies from 'js-cookie'; // Import js-cookie
 
 const Login = () => {
@@ -15,25 +15,26 @@ const Login = () => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
-  
+
     if (usernameRef.current && passwordRef.current) {
       try {
         const response = await api.post('/api/business/login', {
           username: usernameRef.current.value,
           password: passwordRef.current.value,
         });
-  
+
         if (response.status === 200) {
           setSuccess('Login successful!');
-          
-          
+
+
           Cookies.set('username', usernameRef.current.value, {
-            path: '/', 
-            expires: 7, 
+            path: '/',
+            expires: 7,
             secure: process.env.NODE_ENV === 'production', // Use Secure cookies in production
             sameSite: 'Lax' // Adjust based on your requirements
           });
-  
+          console.log('Cookie set:', Cookies.get('username')); // Log the cookie value to verify it's set
+
           router.push(`/profile/`);
         } else {
           setError(response.data.message || 'Something went wrong');
@@ -46,7 +47,7 @@ const Login = () => {
       setError('Form fields are not properly initialized');
     }
   };
-  
+
 
   return (
     <div className='flex items-center justify-center min-h-screen bg-blue-50'>
