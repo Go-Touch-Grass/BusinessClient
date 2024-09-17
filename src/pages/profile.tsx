@@ -75,8 +75,8 @@ const ProfilePage: React.FC = () => {
       const response = await api.put(`/api/business/profile/${username}`, formData);
 
       if (response.status === 200) {
-        setProfile(formData); // Update profile with new data
-        setIsEditing(false); // Exit edit mode
+        setProfile(formData); 
+        setIsEditing(false); 
         setError(null);
       } else {
         setError(response.data.message || 'Failed to update profile');
@@ -168,7 +168,7 @@ const ProfilePage: React.FC = () => {
                 id='username'
                 placeholder='Enter your username'
                 value={formData.username}
-                disabled
+                disabled={!isEditing}
               />
             </div>
           </div>
