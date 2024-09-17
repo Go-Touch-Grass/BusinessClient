@@ -8,9 +8,46 @@ import {
 import { LuAlignLeft } from 'react-icons/lu';
 import Link from 'next/link';
 import { Button } from '../ui/button';
-import { links } from '@/utills/links';
 
-function LinksDropdown() {
+import { useAuth } from '@/pages/AuthContext';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/router';
+
+// Define the type for the dropdown items
+interface DropdownItem {
+  label: string;
+  href: string;
+  onClick?: () => void;
+}
+
+const LinksDropdown = () => {
+  const { isLoggedIn, setIsLoggedIn } = useAuth();
+  const router = useRouter(); // Use useRouter instead of importing router directly
+
+  // Default links for all users
+  let links: DropdownItem[] = [
+    { label: 'Home', href: '/' },
+    { label: 'About', href: '/about' },
+  ];
+
+  // Logout handler
+  const handleLogout = () => {
+    // Remove cookies and reset auth state
+    Cookies.remove('username');
+    setIsLoggedIn(false);
+    router.push('/'); // Redirect to homepage or login
+  };
+
+  // If logged in, add additional links
+  if (isLoggedIn) {
+    links = [
+      { label: 'Profile', href: '/profile' },
+      { label: 'Register Business', href: '/registerBusiness' },
+      //...links, //  original links from logged out view 
+      { label: 'Logout', href: '#', onClick: handleLogout },
+    ];
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -22,14 +59,21 @@ function LinksDropdown() {
         {links.map((link) => {
           return (
             <DropdownMenuItem key={link.href}>
-              <Link href={link.href} className='capitalize w-full'>
-                {link.label}
-              </Link>
+              {link.onClick ? (
+                <button onClick={link.onClick} className='capitalize w-full'>
+                  {link.label}
+                </button>
+              ) : (
+                <Link href={link.href} className='capitalize w-full'>
+                  {link.label}
+                </Link>
+              )}
             </DropdownMenuItem>
           );
         })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};
+
 export default LinksDropdown;

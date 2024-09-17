@@ -10,25 +10,27 @@ import Cookies from 'js-cookie';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Button, buttonVariants } from '../ui/button';
+import { useAuth } from '@/pages/AuthContext';
 
 const Navbar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  /*
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
     // Check for the presence of the username or auth token in cookies
     const username = Cookies.get('username');
+    console.log("login", username)
     if (username) {
       setIsLoggedIn(true);
     }
   }, []);
-
+  */
+  const { isLoggedIn } = useAuth();
   return (
     <nav className='border-b'>
       <Container className='flex flex-col sm:flex-row sm:justify-between sm:items-center flex-wrap py-8 gap-4'>
         <Logo />
         <ul className="flex gap-4 justify-between">
-
-
           {!isLoggedIn ? (
             <>
 
@@ -49,28 +51,37 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              {/*
+              Not used, becuase it will be in the dropdown
               <li>
-                <Link href="/profile" >
-                  Profile
-                </Link>
+                <Button variant='secondary'>
+                  <Link href="/profile" >
+                    Profile
+                  </Link>
+                </Button>
               </li>
               <li>
-                <Link href="/registerBusiness" >
-                  Register Business
-                </Link>
+                <Button variant='secondary'>
+                  <Link href="/registerBusiness" >
+                    Register Business
+                  </Link>
+                </Button>
               </li>
-              <li>
-                <a
-                  href="#"
-                  onClick={() => {
-                    Cookies.remove('username');
-                    setIsLoggedIn(false); // Log out
-                  }}
+                  <li>
+                <Button variant='destructive'>
+                  <a
+                    href="/"
+                    onClick={() => {
+                      Cookies.remove('username');
+                      setIsLoggedIn(false); // Log out
+                    }}
+                  >
+                    Logout
+                  </a>
+                </Button>
+              </li>
+              */}
 
-                >
-                  Logout
-                </a>
-              </li>
               <div className='flex-grow flex justify-center sm:justify-end'>
                 <Suspense>
                   <NavSearch />
@@ -83,9 +94,6 @@ const Navbar = () => {
             </>
           )}
         </ul>
-
-
-
       </Container>
     </nav>
 
