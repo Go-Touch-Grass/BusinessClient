@@ -132,8 +132,8 @@ const Register = () => {
 
             if (response.status === 201 || response.status === 200) {
                 setSuccess('Successfully applied!');
-                // Redirect to status page
-                router.push('/registerBusiness/status');
+                // Redirect to profile page
+                router.push('/profile');
             } else {
                 setError(response.data.message || 'Something went wrong');
             }
