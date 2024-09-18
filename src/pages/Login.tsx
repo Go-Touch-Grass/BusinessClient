@@ -39,7 +39,7 @@ const Login = () => {
           // Update authentication state
           setIsLoggedIn(true);
 
-          router.push(`/home/`);
+          router.push(`/profile/`);
         } else {
           setError(response.data.message || 'Something went wrong');
         }

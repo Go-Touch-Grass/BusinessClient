@@ -6,6 +6,7 @@ import { Button } from '../components/components/ui/button';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/router';
 import withAuth from './withAuth';
+import { useAuth } from "./AuthContext";
 
 interface BusinessAccount {
     firstName: string;
@@ -30,6 +31,8 @@ interface BusinessRegistration {
 }
 
 const ProfilePage: React.FC = () => {
+    const { isLoggedIn, setIsLoggedIn } = useAuth();
+
     const [profile, setProfile] = useState<BusinessAccount | null>(null);
     const [outlets, setOutlets] = useState<Outlet[]>([]);
     const [businessRegistration, setBusinessRegistration] = useState<BusinessRegistration | null>(null);
@@ -115,6 +118,7 @@ const ProfilePage: React.FC = () => {
     const handleLogout = () => {
         clearAllCookies();
         router.push('/Login');
+        setIsLoggedIn(false);
         console.log('Logout process initiated');
 
         if (typeof window !== 'undefined') {

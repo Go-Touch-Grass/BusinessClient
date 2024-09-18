@@ -52,6 +52,7 @@ const AddOutletPage: React.FC = () => {
       if (response.status === 201) {
         console.log('Outlet added successfully');
         setSuccessMessage('Outlet added successfully'); // Redirect after successful creation
+        router.push('/profile');
       } else {
         // Axios does not have a `json` method; use `response.data` instead
         setError(`Failed to add outlet: ${response.data.message || 'Unknown error'}`);
