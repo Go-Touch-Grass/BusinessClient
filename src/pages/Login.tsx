@@ -44,7 +44,7 @@ const Login = () => {
           setError(response.data.message || 'Something went wrong');
         }
       } catch (err) {
-        setError('An error occurred');
+        setError('Password or username is wrong!');
         console.error('API call error:', err);
       }
     } else {

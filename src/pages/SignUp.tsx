@@ -27,6 +27,12 @@ const SignUpPage = () => {
     setError(null);
     setSuccess(null);
 
+
+    if (!isRepresentative) {
+      setError('You must confirm that you are the representative of the company.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;

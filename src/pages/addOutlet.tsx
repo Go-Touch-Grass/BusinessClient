@@ -15,10 +15,11 @@ const AddOutletPage: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ contact?: string; field?: string }>({});
 
   const router = useRouter();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -26,9 +27,30 @@ const AddOutletPage: React.FC = () => {
     }
   };
 
+  const validateForm = () => {
+    const errors: { contact?: string; field?: string } = {};
+    const contactPattern = /^[0-9]{8}$/; // Regex for exactly 8 digits
+
+    if (!outletName || !location || !contact || !description) {
+      errors.field = 'All fields must be filled in';
+    }
+
+    if (!contactPattern.test(contact)) {
+      errors.contact = 'Contact number must be exactly 8 digits';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
+
+    if (!validateForm()) {
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const username = Cookies.get('username'); // Get username from cookies
@@ -47,7 +69,6 @@ const AddOutletPage: React.FC = () => {
       }
 
       const response = await api.post(`/api/business/outlets/${username}`, formData);
-
 
       if (response.status === 201) {
         console.log('Outlet added successfully');
@@ -105,6 +126,7 @@ const AddOutletPage: React.FC = () => {
             type="tel"
             className="w-full"
           />
+          {formErrors.contact && <p className="text-red-500 text-sm">{formErrors.contact}</p>}
         </div>
 
         <div>
@@ -118,6 +140,7 @@ const AddOutletPage: React.FC = () => {
           />
         </div>
 
+        {/* Uncomment if image upload is required */}
         {/*<div>
           <Label htmlFor="image">Outlet Image</Label>
           <Input
@@ -128,6 +151,7 @@ const AddOutletPage: React.FC = () => {
           />
         </div>*/}
 
+        {formErrors.field && <p className="text-red-500 text-sm">{formErrors.field}</p>}
         {error && <p className="text-red-500 text-sm">{error}</p>}
         {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
         <div className="flex justify-end space-x-4">

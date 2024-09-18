@@ -27,6 +27,7 @@ interface BusinessRegistration {
     location: string;
     category: string;
     status: string;
+    remarks: string;
     proof?: string;
 }
 
@@ -93,6 +94,11 @@ const ProfilePage: React.FC = () => {
     };
 
     const handleUpdateProfile = async () => {
+
+        if (!validateForm()) {
+            return;
+        }
+
         try {
             const username = Cookies.get('username');
             if (!username) {
@@ -114,6 +120,28 @@ const ProfilePage: React.FC = () => {
             console.error('API call error:', err);
         }
     };
+
+    const [formErrors, setFormErrors] = useState<Partial<BusinessAccount>>({});
+
+    const validateForm = () => {
+    const errors: Partial<BusinessAccount> = {};
+    if (!formData.firstName) {
+        errors.firstName = 'First name is required';
+    }
+    if (!formData.lastName) {
+        errors.lastName = 'Last name is required';
+    }
+    if (!formData.email) {
+        errors.email = 'Email is required';
+    }
+    if (!formData.username) {
+        errors.username = 'Username is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+};
+
 
     const handleLogout = () => {
         clearAllCookies();
@@ -188,7 +216,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <input type="file" onChange={handleImageChange} />
             </header>
-
+            
             <div className='space-y-6'>
                 <div className='space-y-2'>
                     <h1 className='text-lg font-semibold'>Personal Information</h1>
@@ -202,7 +230,9 @@ const ProfilePage: React.FC = () => {
                                 onChange={handleInputChange}
                                 disabled={!isEditing}
                             />
+                            {formErrors.firstName && <p className='text-red-500'>{formErrors.firstName}</p>}
                         </div>
+                        
                         <div>
                             <Label htmlFor='lastName'>Representative's Last Name</Label>
                             <Input
@@ -212,6 +242,7 @@ const ProfilePage: React.FC = () => {
                                 onChange={handleInputChange}
                                 disabled={!isEditing}
                             />
+                            {formErrors.lastName && <p className='text-red-500'>{formErrors.lastName}</p>}
                         </div>
                         <div>
                             <Label htmlFor='email'>Email</Label>
@@ -223,6 +254,7 @@ const ProfilePage: React.FC = () => {
                                 onChange={handleInputChange}
                                 disabled={!isEditing}
                             />
+                            {formErrors.email && <p className='text-red-500'>{formErrors.email}</p>}
                         </div>
                         <div>
                             <Label htmlFor='username'>Username</Label>
@@ -230,9 +262,36 @@ const ProfilePage: React.FC = () => {
                                 id='username'
                                 placeholder='Enter your username'
                                 value={formData.username}
+                                onChange={handleInputChange}
                                 disabled={!isEditing}
                             />
+                            {formErrors.username && <p className='text-red-500'>{formErrors.username}</p>}
                         </div>
+                    </div>
+                </div>
+
+                
+
+
+                <div className='space-y-6'>
+                    <div className='flex justify-between items-center'>
+                        <h2 className='text-lg font-semibold'>Business Registration</h2>
+                        <Button className='bg-green-500 hover:bg-green-600 text-white' onClick={() => router.push('/registerBusiness')}>
+                            + Register New Business
+                        </Button>
+                    </div>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        {!businessRegistration ? (
+                            <p>No business registration found.</p>
+                        ) : (
+                            <div key={businessRegistration.entityName} className='border p-4 rounded-lg'>
+                                <h3 className='text-xl font-semibold'>{businessRegistration.entityName}</h3>
+                                <p><strong>Location:</strong> {businessRegistration.location}</p>
+                                <p><strong>Category:</strong> {businessRegistration.category}</p>
+                                <p><strong>Status:</strong> {businessRegistration.status}</p>
+                                <p><strong>Remarks:</strong> {businessRegistration.remarks}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -276,39 +335,12 @@ const ProfilePage: React.FC = () => {
                     </div>
                 </div>
 
-
-                <div className='space-y-6'>
-                    <div className='flex justify-between items-center'>
-                        <h2 className='text-lg font-semibold'>Business Registration</h2>
-                        <Button className='bg-green-500 hover:bg-green-600 text-white' onClick={() => router.push('/registerBusiness')}>
-                            + Register New Business
-                        </Button>
-                    </div>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                        {!businessRegistration ? (
-                            <p>No business registration found.</p>
-                        ) : (
-                            <div key={businessRegistration.entityName} className='border p-4 rounded-lg'>
-                                <h3 className='text-xl font-semibold'>{businessRegistration.entityName}</h3>
-                                <p><strong>Location:</strong> {businessRegistration.location}</p>
-                                <p><strong>Category:</strong> {businessRegistration.category}</p>
-                                <p><strong>Status:</strong> {businessRegistration.status}</p>
-                                {businessRegistration.proof && (
-                                    <a href={`/${businessRegistration.proof}`} target="_blank" rel="noopener noreferrer">
-                                        View Proof
-                                    </a>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
                 <div className='flex space-x-4'>
                     <Button onClick={handleEditToggle}>
                         {isEditing ? 'Cancel' : 'Edit Profile'}
                     </Button>
                     {isEditing && (
-                        <Button onClick={handleUpdateProfile} className='bg-green-300 hover:bg-green-300'>
+                        <Button onClick={handleUpdateProfile} className='bg-green-600 hover:bg-green-600'>
                             Save Changes
                         </Button>
                     )}
