@@ -46,7 +46,8 @@ const AddOutletPage: React.FC = () => {
         formData.append('image', image);
       }
 
-      const response = await api.post(`/api/business/outlets`, formData);
+      const response = await api.post(`/api/business/outlets/${username}`, formData);
+
 
       if (response.status === 201) {
         console.log('Outlet added successfully');
@@ -132,7 +133,7 @@ const AddOutletPage: React.FC = () => {
           <Button
             disabled={isSubmitting}
             onClick={handleSubmit}
-            className="bg-blue-500 hover:bg-blue-600"
+            className="bg-green-500 hover:bg-green-600"
           >
             {isSubmitting ? 'Submitting...' : 'Add Outlet'}
           </Button>

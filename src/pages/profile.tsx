@@ -21,9 +21,18 @@ interface Outlet {
     description: string;
 }
 
+interface BusinessRegistration {
+    entityName: string;
+    location: string;
+    category: string;
+    status: string;
+    proof?: string;
+}
+
 const ProfilePage: React.FC = () => {
     const [profile, setProfile] = useState<BusinessAccount | null>(null);
     const [outlets, setOutlets] = useState<Outlet[]>([]);
+    const [businessRegistration, setBusinessRegistration] = useState<BusinessRegistration | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [formData, setFormData] = useState<BusinessAccount>({
@@ -48,7 +57,8 @@ const ProfilePage: React.FC = () => {
                 if (response.status === 200) {
                     setProfile(response.data.business);
                     setOutlets(response.data.outlets);
-                    setFormData(response.data.business); // Set initial form data
+                    setBusinessRegistration(response.data.registeredBusiness); // Set the business registration data
+                    setFormData(response.data.business);
                 } else {
                     setError(response.data.message || 'Failed to fetch profile');
                 }
@@ -84,8 +94,8 @@ const ProfilePage: React.FC = () => {
             const response = await api.put(`/api/business/profile/${username}`, formData);
 
             if (response.status === 200) {
-                setProfile(formData); 
-                setIsEditing(false); 
+                setProfile(formData);
+                setIsEditing(false);
                 setError(null);
             } else {
                 setError(response.data.message || 'Failed to update profile');
@@ -97,11 +107,11 @@ const ProfilePage: React.FC = () => {
     };
 
     const handleLogout = () => {
-        clearAllCookies(); 
-        router.push('/Login'); 
-
+        clearAllCookies();
+        router.push('/Login');
+        
         console.log('Logout process initiated');
-
+        
         if (typeof window !== 'undefined') {
             window.history.replaceState(null, '', window.location.href);
         }
@@ -110,7 +120,7 @@ const ProfilePage: React.FC = () => {
     const clearAllCookies = () => {
         const allCookies = Cookies.get();
         Object.keys(allCookies).forEach(cookieName => Cookies.remove(cookieName));
-        console.log('All cookies cleared:', Cookies.get()); 
+        console.log('All cookies cleared:', Cookies.get());
     };
 
     return (
@@ -118,7 +128,7 @@ const ProfilePage: React.FC = () => {
             <header className='space-y-1.5'>
                 <div className='flex items-center space-x-4'>
                     <img
-                        src='/images/profile.png' alt='Profile' 
+                        src='/images/profile.png' alt='Profile'
                         width='96'
                         height='96'
                         className='border rounded-full'
@@ -134,12 +144,13 @@ const ProfilePage: React.FC = () => {
                     </div>
                 </div>
             </header>
+
             <div className='space-y-6'>
                 <div className='space-y-2'>
-                    <h2 className='text-lg font-semibold'>Personal Information</h2>
+                    <h1 className='text-lg font-semibold'>Personal Information</h1>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                         <div>
-                            <Label htmlFor='firstName'>First Name</Label>
+                            <Label htmlFor='firstName'>Representative's First Name</Label>
                             <Input
                                 id='firstName'
                                 placeholder='Enter your first name'
@@ -149,7 +160,7 @@ const ProfilePage: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <Label htmlFor='lastName'>Last Name</Label>
+                            <Label htmlFor='lastName'>Representative's Last Name</Label>
                             <Input
                                 id='lastName'
                                 placeholder='Enter your last name'
@@ -180,29 +191,81 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
                 <div className='space-y-6'>
-                    <h2 className='text-lg font-semibold'>Your Outlets</h2>
+    <div className='flex justify-between items-center'>
+        <h2 className='text-lg font-semibold'>Your Outlets</h2>
+        
+        {/* Conditionally disable the button based on businessRegistration status */}
+        <Button
+            className={`${
+                businessRegistration?.status === 'approved' 
+                    ? 'bg-green-500 hover:bg-green-600' 
+                    : 'bg-gray-300 cursor-not-allowed'
+            } text-white`}
+            onClick={() => router.push('/addOutlet')}
+            disabled={businessRegistration?.status !== 'approved'}  // Disable if not approved
+        >
+            + Add New Outlet
+        </Button>
+    </div>
+    
+    {/* Display reason why the button is disabled */}
+    {businessRegistration?.status !== 'approved' && (
+        <p className="text-sm text-gray-500">
+            You cannot add an outlet because your business registration is currently <strong>{businessRegistration?.status}</strong>.
+        </p>
+    )}
+
+    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+        {outlets.length === 0 ? (
+            <p>No outlets found.</p>
+        ) : (
+            outlets.map(outlet => (
+                <div key={outlet.outlet_name} className='border p-4 rounded-lg'>
+                    <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
+                    <p><strong>Location:</strong> {outlet.location}</p>
+                    <p><strong>Contact:</strong> {outlet.contact}</p>
+                    <p><strong>Description:</strong> {outlet.description}</p>
+                </div>
+            ))
+        )}
+    </div>
+</div>
+
+
+                <div className='space-y-6'>
+                    <div className='flex justify-between items-center'>
+                        <h2 className='text-lg font-semibold'>Business Registration</h2>
+                        <Button className='bg-green-500 hover:bg-green-600 text-white' onClick={() => router.push('/registerBusiness')}>
+                            + Register New Business
+                        </Button>
+                    </div>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                        {outlets.length === 0 ? (
-                            <p>No outlets found.</p>
+                        {!businessRegistration ? (
+                            <p>No business registration found.</p>
                         ) : (
-                            outlets.map(outlet => (
-                                <div key={outlet.outlet_name} className='border p-4 rounded-lg'>
-                                    <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
-                                    <p><strong>Location:</strong> {outlet.location}</p>
-                                    <p><strong>Contact:</strong> {outlet.contact}</p>
-                                    <p><strong>Description:</strong> {outlet.description}</p>
-                                </div>
-                            ))
+                            <div key={businessRegistration.entityName} className='border p-4 rounded-lg'>
+                                <h3 className='text-xl font-semibold'>{businessRegistration.entityName}</h3>
+                                <p><strong>Location:</strong> {businessRegistration.location}</p>
+                                <p><strong>Category:</strong> {businessRegistration.category}</p>
+                                <p><strong>Status:</strong> {businessRegistration.status}</p>
+                                {businessRegistration.proof && (
+                                    <a href={`/${businessRegistration.proof}`} target="_blank" rel="noopener noreferrer">
+                                        View Proof
+                                    </a>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
+
                 <div className='flex space-x-4'>
                     <Button onClick={handleEditToggle}>
                         {isEditing ? 'Cancel' : 'Edit Profile'}
                     </Button>
                     {isEditing && (
-                        <Button onClick={handleUpdateProfile} className='bg-blue-500 hover:bg-blue-600'>
+                        <Button onClick={handleUpdateProfile} className='bg-green-300 hover:bg-green-300'>
                             Save Changes
                         </Button>
                     )}
