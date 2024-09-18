@@ -51,22 +51,35 @@ const formSchema = z.object({
         required_error: "You need to select a notification type.",
         message: "Please select a valid category.",
     }),
+
     proof: z
-        .any()
-        .refine((file) => {
-            console.log(file); // Check what is being passed here
-            return !!file;
-        }, {
-            message: "File is required",
-        })
-        .refine((files) => files[0]?.size <= 5000000, {
-            message: "File size should be less than 5MB",
-        })
-        .refine((files) => ["application/pdf", "image/jpeg", "image/png"].includes(files[0]?.type), {
-            message: "File must be a PDF, JPG, or PNG"
-        }), // Check the file type
-
-
+        .instanceof(File)
+        .refine((file) => !!file, { message: "File is required" })// Ensure a file exists
+        .refine((file) => file.size <= 5000000, { message: "File size should be less than 5MB" })// Validate size only if a file exists
+        .refine((file) => ["application/pdf", "image/jpeg", "image/png"].includes(file.type), {
+            message: "File must be a PDF, JPG, or PNG", // Check the file type
+        }),
+    /*
+        proof: z
+            .any()
+             //.array(z.instanceof(File)) // Ensure proof is an array of files
+            //.min(1, "File is required") // Ensure at least one file is uploaded
+            .refine((files) => files && files.length > 0, { // Ensure file exists and not empty
+                message: "File is required"
+            })
+            .refine((file) => {
+                console.log(file); // Check what is being passed here
+                return !!file;
+            }, {
+                message: "File is required",
+            })
+            .refine((files) => files[0]?.size <= 5000000, {
+                message: "File size should be less than 5MB",
+            })
+            .refine((files) => ["application/pdf", "image/jpeg", "image/png"].includes(files[0]?.type), {
+                message: "File must be a PDF, JPG, or PNG"
+            }),
+    */
 })
 
 const Register = () => {
@@ -85,20 +98,23 @@ const Register = () => {
             entityName: "",
             location: "",
             category: undefined,
-            proof: null,
+            //proof: null,
+            proof: undefined,
         },
     })
 
     // 2. Define a submit handler.
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values)
+
+        console.log("values", values)
+
+
         const formData = new FormData();
         formData.append("entityName", values.entityName);
         formData.append("location", values.location);
         formData.append("category", values.category);
-        formData.append("proof", values.proof[0]); // Add the uploaded file
+        //formData.append("proof", values.proof[0]); // Add the uploaded file
+        formData.append("proof", values.proof); // Add the uploaded file
 
         const username = Cookies.get('username');
         if (!username) {
@@ -291,7 +307,7 @@ const Register = () => {
                                 <Input
                                     type="file"
                                     accept=".pdf, .jpg, .png"
-                                    onChange={(e) => field.onChange(e.target.files)} // Handle files correctly
+                                    onChange={(e) => field.onChange(e.target.files?.[0])} // Handle files correctly
                                 />
                             </FormControl>
                             <FormMessage />

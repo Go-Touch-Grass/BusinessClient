@@ -124,23 +124,23 @@ const ProfilePage: React.FC = () => {
     const [formErrors, setFormErrors] = useState<Partial<BusinessAccount>>({});
 
     const validateForm = () => {
-    const errors: Partial<BusinessAccount> = {};
-    if (!formData.firstName) {
-        errors.firstName = 'First name is required';
-    }
-    if (!formData.lastName) {
-        errors.lastName = 'Last name is required';
-    }
-    if (!formData.email) {
-        errors.email = 'Email is required';
-    }
-    if (!formData.username) {
-        errors.username = 'Username is required';
-    }
+        const errors: Partial<BusinessAccount> = {};
+        if (!formData.firstName) {
+            errors.firstName = 'First name is required';
+        }
+        if (!formData.lastName) {
+            errors.lastName = 'Last name is required';
+        }
+        if (!formData.email) {
+            errors.email = 'Email is required';
+        }
+        if (!formData.username) {
+            errors.username = 'Username is required';
+        }
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-};
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
 
     const handleLogout = () => {
@@ -214,9 +214,9 @@ const ProfilePage: React.FC = () => {
                         </p>
                     </div>
                 </div>
-                <input type="file" onChange={handleImageChange} />
+                <input type="file" accept=".jpg, .png" onChange={handleImageChange} />
             </header>
-            
+
             <div className='space-y-6'>
                 <div className='space-y-2'>
                     <h1 className='text-lg font-semibold'>Personal Information</h1>
@@ -232,7 +232,7 @@ const ProfilePage: React.FC = () => {
                             />
                             {formErrors.firstName && <p className='text-red-500'>{formErrors.firstName}</p>}
                         </div>
-                        
+
                         <div>
                             <Label htmlFor='lastName'>Representative's Last Name</Label>
                             <Input
@@ -270,7 +270,7 @@ const ProfilePage: React.FC = () => {
                     </div>
                 </div>
 
-                
+
 
 
                 <div className='space-y-6'>
@@ -290,6 +290,12 @@ const ProfilePage: React.FC = () => {
                                 <p><strong>Category:</strong> {businessRegistration.category}</p>
                                 <p><strong>Status:</strong> {businessRegistration.status}</p>
                                 <p><strong>Remarks:</strong> {businessRegistration.remarks}</p>
+                                {businessRegistration.proof && (
+                                    <a href={`http://localhost:8080/${businessRegistration.proof}`} target="_blank" rel="noopener noreferrer">
+                                        View Proof {/* noopener: prevents new page from accessing or controlling original page. 
+                                                       noreferrer: prevents sending of origin URL to the external site.*/}
+                                    </a>
+                                )}
                             </div>
                         )}
                     </div>
@@ -349,8 +355,8 @@ const ProfilePage: React.FC = () => {
                     </Button>
                 </div>
                 {error && <p className='text-red-500 text-sm'>{error}</p>}
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
