@@ -116,12 +116,21 @@ const Register = () => {
         //formData.append("proof", values.proof[0]); // Add the uploaded file
         formData.append("proof", values.proof); // Add the uploaded file
 
+        // Get the authToken from cookies
+        const token = Cookies.get('authToken');
+        if (!token) {
+            setError('No token found. Please login.');
+            return;
+        }
+        /*
         const username = Cookies.get('username');
         if (!username) {
             setError('No username found in cookies');
             return;
         }
         formData.append("username", username);
+        */
+
 
         /* TO ADD IN IN FUTUR
             try {

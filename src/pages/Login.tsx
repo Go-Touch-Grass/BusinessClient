@@ -28,6 +28,11 @@ const Login = () => {
         if (response.status === 200) {
           setSuccess('Login successful!');
 
+          const { token } = response.data;
+          // Store the token in a cookie
+          Cookies.set('authToken', token, { expires: 2 }); // Token expires in 1 day
+
+          /*
           Cookies.set('username', usernameRef.current.value, {
             path: '/',
             expires: 7,
@@ -35,7 +40,7 @@ const Login = () => {
             sameSite: 'Lax' // Adjust based on your requirements
           });
           //console.log('Cookie set:', Cookies.get('username')); // Log the cookie value to verify it's set
-
+          */
           // Update authentication state
           setIsLoggedIn(true);
 

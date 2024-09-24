@@ -33,6 +33,14 @@ const SignUpPage = () => {
       return;
     }
 
+    const password = passwordRef.current?.value || '';
+    const confirmPassword = confirmPasswordRef.current?.value || '';
+
+    if (password.length < 8) {
+      setError("password must be at least 8 characters");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
