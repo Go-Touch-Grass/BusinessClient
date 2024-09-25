@@ -58,7 +58,8 @@ const LinksDropdown = () => {
       { label: 'Profile', href: '/profile' },
       { label: 'Register Business', href: '/registerBusiness' },
       //...links, //  original links from logged out view 
-      { label: 'Logout', href: '#', onClick: handleLogout },
+      { label: 'View Subscriptions', href: '/viewSubscriptionPage'},
+      
     ];
   }
 
