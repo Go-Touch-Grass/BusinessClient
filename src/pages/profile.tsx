@@ -52,7 +52,8 @@ const ProfilePage: React.FC = () => {
         username: ''
     });
     const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null); // Store the selected outlet for deletion
-    const [isModalVisible, setIsModalVisible] = useState<boolean>(false); // set the Confirmation Modal visibility
+    const [isOutletModalVisible, setIsOutletModalVisible] = useState<boolean>(false); // Modal for outlet deletion
+    const [isAccountModalVisible, setIsAccountModalVisible] = useState<boolean>(false); // Modal for account deletion
     const router = useRouter();
 
     useEffect(() => {
@@ -209,10 +210,8 @@ const ProfilePage: React.FC = () => {
     const handleDeleteOutlet = (outlet: Outlet) => {
 
         setSelectedOutlet(outlet);  // Store the outlet for deletion
-        setIsModalVisible(true);    // Open the confirmation modal
+        setIsOutletModalVisible(true);     // Open the confirmation modal
     };
-
-
     const handleConfirmDeleteOutlet = async (contact: string) => {
         if (!selectedOutlet) return;
 
@@ -243,8 +242,38 @@ const ProfilePage: React.FC = () => {
         }
 
         setSelectedOutlet(null);
-        setIsModalVisible(false);
+        setIsOutletModalVisible(false);
     }
+
+    const handleDeleteAccountButtonClick = () => {
+        setIsAccountModalVisible(true); // Open the confirmation modal
+    };
+    const handleConfirmDeleteAccount = async (password: string) => {
+        try {
+            const token = Cookies.get('authToken');
+            if (!token) {
+                setError('No token found. Please log in.');
+                return;
+            }
+
+            // Make the API call to delete the account
+            const response = await api.delete(`/api/business/account`, {
+                data: { password },
+            });
+
+            if (response.status === 200) {
+                //clearAllCookies(); // Clear cookies on successful deletion
+                //router.push('/'); // Redirect to the homepage after account deletion
+                handleLogout(); // Log out the user
+            } else {
+                setError('Failed to delete account');
+            }
+        } catch (err) {
+            setError('An error occurred while deleting your account');
+            console.error('API call error:', err);
+        }
+    };
+
 
     return (
         <div className='px-4 space-y-6 md:px-6'>
@@ -389,10 +418,11 @@ const ProfilePage: React.FC = () => {
                     )}
 
                     <ConfirmationModal
-                        isVisible={isModalVisible}
-                        onClose={() => setIsModalVisible(false)}
+                        isVisible={isOutletModalVisible}
+                        onClose={() => setIsOutletModalVisible(false)}
                         onConfirm={handleConfirmDeleteOutlet}
                         outletContact={selectedOutlet?.contact || ''}
+                        confirmationType="contact" // Specify that this modal should collect contact number
                     />
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                         {outlets.length === 0 ? (
@@ -404,8 +434,9 @@ const ProfilePage: React.FC = () => {
                                     <p><strong>Location:</strong> {outlet.location}</p>
                                     <p><strong>Contact:</strong> {outlet.contact}</p>
                                     <p><strong>Description:</strong> {outlet.description}</p>
-
-                                    <Button onClick={() => handleDeleteOutlet(outlet)} className='bg-red-500 hover:bg-red-600'>Delete Outlet</Button>
+                                    <div className='flex justify-end mt-4'> {/* Align to right */}
+                                        <Button onClick={() => handleDeleteOutlet(outlet)} className='bg-red-500 hover:bg-red-600'>Delete Outlet</Button>
+                                    </div>
                                 </div>
                             ))
                         )}
@@ -421,10 +452,23 @@ const ProfilePage: React.FC = () => {
                             Save Changes
                         </Button>
                     )}
+                    <Button onClick={handleDeleteAccountButtonClick} className='bg-red-500 hover:bg-red-600'>
+                        Delete Account
+                    </Button>
+                    {/*
                     <Button onClick={handleLogout} className='bg-red-500 hover:bg-red-600'>
                         Log Out
                     </Button>
+                    */}
                 </div>
+                {/* Modal for delete account confirmation */}
+                <ConfirmationModal
+                    isVisible={isAccountModalVisible}
+                    onClose={() => setIsAccountModalVisible(false)}
+                    onConfirm={handleConfirmDeleteAccount} // Pass handleDeleteAccount for confirmation
+                    outletContact="" // Not needed for account deletion, but modal expects it
+                    confirmationType="password" // Specify that this modal should collect password
+                />
                 {error && <p className='text-red-500 text-sm'>{error}</p>}
             </div >
         </div >
