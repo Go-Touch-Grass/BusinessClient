@@ -1,6 +1,7 @@
 import { useState, useRef, FormEvent } from "react";
 import api from "@/api";
 import { useRouter } from "next/router";
+import Cookies from 'js-cookie';
 
 const SignUpPage = () => {
   const [firstName, setFirstName] = useState('');
@@ -65,8 +66,13 @@ const SignUpPage = () => {
         });
 
         if (response.status === 201) {
+          const { token } = response.data;
+          // Store the token in a cookie
+          Cookies.set('authToken', token, { expires: 1 }); // Token expires in 1 day
+
           setSuccess('Account created successfully!');
-          router.push('/Login');
+          //router.push('/Login');
+          router.push('/verifyOTP');
         } else {
           setError(response.data.message || 'Something went wrong');
         }
