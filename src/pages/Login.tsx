@@ -48,9 +48,22 @@ const Login = () => {
         } else {
           setError(response.data.message || 'Something went wrong');
         }
-      } catch (err) {
-        setError('Password or username is wrong!');
-        console.error('API call error:', err);
+      } catch (error: any) {
+        console.error('Full error:', error); // Log the full error for better debugging
+
+        // Check if the error has a response and the status
+        if (error.response) {
+          console.error('Error response:', error.response); // Log the response object
+          if (error.response.status === 403) {
+            setError('Your account has been deactivated. Please contact support.');
+          } else if (error.response.status === 401) {
+            setError('Invalid username or password.');
+          } else {
+            setError('An error occurred while logging in. Ensure you have created an account.');
+          }
+        } else {
+          setError('An error occurred while logging in.');
+        }
       }
     } else {
       setError('Form fields are not properly initialized');

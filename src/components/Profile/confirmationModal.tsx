@@ -23,7 +23,7 @@ const ConfirmationModal: React.FC<{
                 <h3 className="text-xl font-semibold mb-4">Confirm {confirmationType === 'password' ? 'Account Deletion' : 'Delete Outlet'}</h3>
                 <p className="mb-4">
                     {confirmationType === 'password'
-                        ? 'This will delete all your data. Please enter your password to confirm account deletion:'
+                        ? 'This will delete your data. Please enter your password to confirm account deletion:'
                         : 'Please enter the contact number to confirm deletion:'}
                 </p>
 

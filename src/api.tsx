@@ -33,7 +33,7 @@ const createInstance = (baseUrl) => {
       return response;  // If the request is successful, return the response
     },
     (error) => {
-      const router = useRouter();  // Use the Next.js router for navigation
+      //const router = useRouter();  // Use the Next.js router for navigation
 
       if (error.response && error.response.status === 401) {
         // Handle 401 Unauthorized: Redirect to login and clear the token
