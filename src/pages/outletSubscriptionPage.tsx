@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import Cookies from 'js-cookie';
-import { useRouter } from 'next/router'; 
+import { useRouter } from 'next/router';
 import api from '@/api';
 
-const OutletBusinessSubscription = () => { 
+const OutletBusinessSubscription = () => {
     const [duration, setDuration] = useState(1); // Default to 1 month
     const [distance_coverage, setDistanceCoverage] = useState(0); // Default to no extra distance
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const router = useRouter(); 
-    const { outlet } = router.query; 
+    const router = useRouter();
+    const { outlet } = router.query;
 
     // Pricing structure
     const pricing = {
@@ -46,31 +46,24 @@ const OutletBusinessSubscription = () => {
                 return;
             }
 
-            const activationDate = new Date(); // Current date
-            const expirationDate = new Date(activationDate); 
-            expirationDate.setMonth(activationDate.getMonth() + duration); // Add duration to activation date
-            
-            // Log the dates for debugging
-            console.log("Activation Date:", activationDate.toISOString());
-            console.log("Expiration Date before adjustment:", expirationDate.toISOString());
+            // Prepare the JSON payload
+            const payload = {
+                duration,
+                distance_coverage,
+                total_cost,
+                total_gem,
+                title: `${duration} Month Plan`,
+                description: `Subscription for ${duration} month(s) with ${distance_coverage} km coverage.`,
+                outletId: outlet as string, // Use outlet from query
+            };
 
-            // Prepare form data
-            const formData = new FormData();
-            formData.append('duration', duration.toString());
-            formData.append('distance_coverage', distance_coverage.toString());
-            formData.append('total_cost', total_cost.toString());
-            formData.append('total_gem', total_gem.toString());
-            formData.append('title', `${duration} Month Plan`);
-            formData.append('description', `Subscription for ${duration} month(s) with ${distance_coverage} km coverage.`);
-            formData.append('outletId', outlet as string); // Use outlet from query
-            formData.append('activation_date', activationDate.toISOString()); // Store activation date
-            formData.append('expiration_date', expirationDate.toISOString()); // Store expiration date
+            console.log('Request Payload:', payload);
 
-            const response = await api.post(`/api/business/outlet/subscription/${username}/${outlet}`, formData);
-            
+            const response = await api.post(`/api/business/outlet/subscription/${username}/${outlet}`, payload);
+
             if (response.status === 201) {
                 setSuccessMessage('Subscription created successfully!');
-                router.push('/profile'); 
+                router.push('/profile');
             } else {
                 setError(`Failed to create subscription: ${response.data.message || 'Unknown error'}`);
             }
@@ -82,11 +75,12 @@ const OutletBusinessSubscription = () => {
         }
     };
 
+
     return (
         <div className="min-h-screen flex flex-col items-center bg-gradient-to-b from-green-100 to-white p-10">
             <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-xl">
                 <h2 className="text-3xl font-bold text-green-600 mb-6 text-center">Outlet Subscription Plan</h2>
-                
+
                 {error && <p className="text-red-600 text-center mb-4">{error}</p>}
                 {successMessage && <p className="text-green-600 text-center mb-4">{successMessage}</p>}
 

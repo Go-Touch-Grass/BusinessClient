@@ -19,6 +19,7 @@ const ViewSubscriptions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [renewError, setRenewError] = useState<string | null>(null); // For renewal errors
+  const [endError, setEndError] = useState<string | null>(null); // For ending errors
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
@@ -29,12 +30,16 @@ const ViewSubscriptions = () => {
           return;
         }
         const response = await api.get(`/api/business/subscription/${username}`);
-        
+
         // Log response for debugging
         console.log('API response:', response.data);
 
-        // Assuming the API returns a list of subscriptions
-        setSubscriptions(response.data.subscriptions || []);
+        // Check if the response contains subscriptions
+        if (response.data.subscriptions && response.data.subscriptions.length > 0) {
+          setSubscriptions(response.data.subscriptions);
+        } else {
+          setError('No active subscriptions found');
+        }
       } catch (err) {
         console.error('Fetch error:', err);
         setError('Error fetching subscriptions');
@@ -45,6 +50,7 @@ const ViewSubscriptions = () => {
 
     fetchSubscriptions();
   }, []);
+
 
   const isButtonActive = (expirationDate: Date) => {
     const currentDate = new Date();
@@ -70,17 +76,16 @@ const ViewSubscriptions = () => {
 
       const currentDate = new Date();
       const newExpirationDate = new Date(currentDate);
-      newExpirationDate.setMonth(currentDate.getMonth() + subscription.duration); 
+      newExpirationDate.setMonth(currentDate.getMonth() + subscription.duration);
 
-      
       setSubscriptions((prevSubscriptions) =>
         prevSubscriptions.map((sub) =>
           sub.outlet_id === subscription.outlet_id
             ? {
-                ...sub,
-                activation_date: currentDate,
-                expiration_date: newExpirationDate
-              }
+              ...sub,
+              activation_date: currentDate,
+              expiration_date: newExpirationDate
+            }
             : sub
         )
       );
@@ -90,12 +95,54 @@ const ViewSubscriptions = () => {
     }
   };
 
+  const endSubscription = async (subscription: Subscription) => {
+    try {
+      const username = Cookies.get('username');
+      if (!username) {
+        setEndError('No username found in cookies');
+        return;
+      }
+
+      const response = await api.delete('/api/business/end_subscription', {
+        data: {
+          username,
+          outlet_id: subscription.outlet_id
+        }
+      });
+
+      console.log('End subscription response:', response.data);
+
+      // Remove the ended subscription from the state
+      setSubscriptions((prevSubscriptions) =>
+        prevSubscriptions.filter((sub) => sub.outlet_id !== subscription.outlet_id)
+      );
+    } catch (err) {
+      console.error('End subscription error:', err);
+      setEndError('Error ending subscription');
+    }
+  };
+
   if (loading) {
     return <p>Loading...</p>;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return (
+      <div className="flex flex-col items-center bg-green-100 p-10 rounded-lg shadow-md text-center">
+        {/* You can style this message differently based on the error */}
+        <p className="text-2xl font-bold text-red-600">{error}</p>
+        <p className="text-gray-600 mt-4">Please check back later or subscribe to a new plan.</p>
+        <button
+          className="mt-6 px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600"
+          onClick={() => {
+            // Optional: Redirect or suggest subscribing to a plan
+            // For example, navigate to a subscription page
+          }}
+        >
+          Subscribe to a Plan
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -104,6 +151,7 @@ const ViewSubscriptions = () => {
         <h2 className="text-3xl font-bold text-green-600 mb-6 text-center">My Subscriptions</h2>
 
         {renewError && <p className="text-red-600">{renewError}</p>} {/* Display renewal error */}
+        {endError && <p className="text-red-600">{endError}</p>} {/* Display ending error */}
 
         {subscriptions.length === 0 ? (
           <p>No subscriptions found.</p>
@@ -128,16 +176,26 @@ const ViewSubscriptions = () => {
                 <p>Activation Date: {new Date(subscription.activation_date).toLocaleDateString()}</p>
                 <p>Expiration Date: {new Date(subscription.expiration_date).toLocaleDateString()}</p>
 
-                {/* Button for renewing the subscription */}
-                <button
-                  onClick={() => renewSubscription(subscription)} // Call renew function with subscription
-                  disabled={!isButtonActive(subscription.expiration_date)}
-                  className={`mt-4 p-2 rounded ${
-                    isButtonActive(subscription.expiration_date) ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                  }`}
-                >
-                  {isButtonActive(subscription.expiration_date) ? 'Renew Subscription' : 'Subscription Ongoing'}
-                </button>
+                {/* Flex container for buttons */}
+                <div className="flex justify-between mt-4">
+                  {/* Button for renewing the subscription */}
+                  <button
+                    onClick={() => renewSubscription(subscription)} // Call renew function with subscription
+                    disabled={!isButtonActive(subscription.expiration_date)}
+                    className={`p-2 rounded ${isButtonActive(subscription.expiration_date) ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}
+                  >
+                    {isButtonActive(subscription.expiration_date) ? 'Renew Subscription' : 'Subscription Ongoing'}
+                  </button>
+
+
+                  <button
+                    onClick={() => endSubscription(subscription)}
+                    className="p-2 rounded bg-red-600 text-white"
+                  >
+                    End Subscription
+                  </button>
+                </div>
               </div>
             ))}
           </div>

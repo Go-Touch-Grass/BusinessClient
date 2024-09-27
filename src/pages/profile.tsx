@@ -25,6 +25,7 @@ interface Outlet {
 }
 
 interface BusinessRegistration {
+
     entityName: string;
     location: string;
     category: string;
@@ -390,7 +391,9 @@ const ProfilePage: React.FC = () => {
                                     <Button
                                         className='bg-blue-500 hover:bg-blue-600 text-white'
                                         onClick={() => router.push('/subscriptionPage')}
-                                        disabled={businessRegistration?.status !== 'approved'}
+                                        disabled={businessRegistration?.status === 'pending'
+
+                                        }
                                     >
                                         Create Subscription Plan
                                     </Button>
