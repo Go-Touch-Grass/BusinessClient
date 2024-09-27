@@ -20,4 +20,6 @@ npm run dev
 
 3. For file organisation, would be cleaner to have a src/components and put those components into src/pages
 
-
+4. In the <code>.env</code> file, add the email credentials:<br>
+EMAIL_USER=<code>gotouchgrass33@gmail.com</code><br>
+EMAIL_PASS=<code>lhrt uxql byis dntd</code>
