@@ -46,7 +46,7 @@ const OutletBusinessSubscription = () => {
                 return;
             }
 
-            // Prepare the JSON payload
+
             const payload = {
                 duration,
                 distance_coverage,
@@ -54,7 +54,7 @@ const OutletBusinessSubscription = () => {
                 total_gem,
                 title: `${duration} Month Plan`,
                 description: `Subscription for ${duration} month(s) with ${distance_coverage} km coverage.`,
-                outletId: outlet as string, // Use outlet from query
+                outletId: outlet as string,
             };
 
             console.log('Request Payload:', payload);
