@@ -56,10 +56,12 @@ const LinksDropdown = () => {
   if (isLoggedIn) {
     links = [
       { label: 'Profile', href: '/profile' },
+      { label: 'Map', href: '/map' },
       { label: 'Register Business', href: '/registerBusiness' },
       //...links, //  original links from logged out view 
-      { label: 'View Subscriptions', href: '/viewSubscriptionPage'},
-      
+      { label: 'View Subscriptions', href: '/viewSubscriptionPage' },
+
+      { label: 'Logout', href: '#', onClick: handleLogout },
     ];
   }
 

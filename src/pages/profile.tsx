@@ -58,6 +58,7 @@ const ProfilePage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
+
         const fetchProfile = async () => {
             try {
                 const token = Cookies.get('authToken');
@@ -82,8 +83,8 @@ const ProfilePage: React.FC = () => {
                 console.error('API call error:', err);
             }
         };
-
         fetchProfile();
+
     }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
