@@ -21,4 +21,4 @@ npm run dev
 3. For file organisation, would be cleaner to have a src/components and put those components into src/pages
 
 4. Create a `.env` file. In the file, add in the following:</br>
-`MAPS_API_KEY=` (For this maps api key, ask jinyuen)
+`NEXT_PUBLIC_MAPS_API_KEY=` (For this maps api key, ask jinyuen)
