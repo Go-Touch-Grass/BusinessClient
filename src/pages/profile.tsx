@@ -58,7 +58,6 @@ const ProfilePage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
-
         const fetchProfile = async () => {
             try {
                 const token = Cookies.get('authToken');
@@ -75,6 +74,8 @@ const ProfilePage: React.FC = () => {
                     setOutlets(response.data.outlets);
                     setBusinessRegistration(response.data.registeredBusiness); // Set the business registration data
                     setFormData(response.data.business);
+
+
                 } else {
                     setError(response.data.message || 'Failed to fetch profile');
                 }
@@ -83,8 +84,8 @@ const ProfilePage: React.FC = () => {
                 console.error('API call error:', err);
             }
         };
-        fetchProfile();
 
+        fetchProfile();
     }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
