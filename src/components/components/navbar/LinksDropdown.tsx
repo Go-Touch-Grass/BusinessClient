@@ -58,6 +58,7 @@ const LinksDropdown = () => {
       { label: 'Profile', href: '/profile' },
       { label: 'Map', href: '/map' },
       { label: 'Register Business', href: '/registerBusiness' },
+      { label: 'Avatar Management', href: '/avatarManagement' },
       //...links, //  original links from logged out view 
       { label: 'View Subscriptions', href: '/viewSubscriptionPage' },
 
