@@ -61,7 +61,7 @@ const LinksDropdown = () => {
       { label: 'Avatar Management', href: '/avatarManagement' },
       //...links, //  original links from logged out view 
       { label: 'View Subscriptions', href: '/viewSubscriptionPage' },
-
+      { label: 'Voucher Management', href: '/voucher' },
       { label: 'Logout', href: '#', onClick: handleLogout },
     ];
   }

@@ -35,7 +35,6 @@ const withAuth = (WrappedComponent: React.FC) => {
       }
     }, [isLoggedIn, router, setIsLoggedIn]);
 
-
     /*
         // To avoid rendering protected component before the redirect, show a loading indicator.
         if (!isLoggedIn) {
