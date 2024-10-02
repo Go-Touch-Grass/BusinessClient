@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '@/api'; // Your API setup
+import api from '@/api';
 import Cookies from 'js-cookie'; // For managing authentication tokens
 import withAuth from '../../withAuth';
 import { Input } from '../../../components/components/ui/input';

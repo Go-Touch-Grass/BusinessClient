@@ -69,8 +69,13 @@ const VoucherList = () => {
     }, []);
 
     const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedBranch(e.target.value);
-        fetchVouchers(e.target.value); // Fetch vouchers based on selected branch
+        const value = e.target.value;
+        // Prevent selecting the "Select a Branch" option (empty value)
+        if (value === '') {
+            return;
+        }
+        setSelectedBranch(value);
+        fetchVouchers(value); // Fetch vouchers based on selected branch
     };
 
     const fetchVouchers = async (branchId: string) => {
@@ -96,6 +101,23 @@ const VoucherList = () => {
             setError('Error fetching vouchers');
         }
     };
+
+    const handleEdit = (listingId: number) => {
+        //router.push(`/editVoucher/${listingId}`);
+    };
+
+    const handleDelete = async (listingId: number) => {
+        /*
+        try {
+            await api.delete(`/api/business/voucher/${listingId}`);
+            setVouchers(vouchers.filter(voucher => voucher.listing_id !== listingId));
+        } catch (err) {
+            console.error('Error deleting voucher:', err);
+            setError('An error occurred while deleting the voucher');
+        }
+        */
+    };
+
     return (
         <div>
             <h1>View Vouchers</h1>
@@ -135,21 +157,49 @@ const VoucherList = () => {
             {error && <p className="text-red-500">{error}</p>}
 
             {/* Display vouchers */}
-            <div>
-                {vouchers.length > 0 ? (
-                    <ul>
-                        {vouchers.map((voucher) => (
-                            <li key={voucher.listing_id} className="voucher-item">
-                                <h3>{voucher.name}</h3>
-                                <p>{voucher.description}</p>
-                                <p>Price: {voucher.price}</p>
-                                <p>Discount: {voucher.discount}%</p>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
+            <br />
+            <div className="container mx-auto">
+                <h1 className="text-2xl font-bold mb-6">Manage Vouchers</h1>
 
-                    <p>No vouchers available</p>
+                {error && <p className="text-red-500">{error}</p>}
+
+                {vouchers.length === 0 ? (
+                    <p>No vouchers available.</p>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {vouchers.map((voucher) => (
+                            <div
+                                key={voucher.listing_id}
+                                className="border rounded-lg shadow-lg p-4 bg-white"
+                            >
+                                {voucher.voucherImage && (
+                                    <img
+                                        src={voucher.voucherImage}
+                                        alt={voucher.name}
+                                        className="w-full h-48 object-cover mb-4 rounded"
+                                    />
+                                )}
+                                <h3 className="text-xl font-semibold mb-2">{voucher.name}</h3>
+                                <p className="text-gray-700 mb-2">{voucher.description}</p>
+                                <p className="text-gray-900 font-bold mb-2">Price: ${voucher.price}</p>
+                                <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
+                                <div className="flex justify-between">
+                                    <Button
+                                        onClick={() => handleEdit(voucher.listing_id)}
+                                        variant="default"
+                                    >
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        onClick={() => handleDelete(voucher.listing_id)}
+                                        variant="destructive"
+                                    >
+                                        Delete
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
         </div>
