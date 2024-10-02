@@ -78,6 +78,8 @@ const VoucherList = () => {
             return;
         }
         setSelectedBranch(value);
+        setVouchers([]);  // Clear vouchers
+        setError('');     // Clear error message
         fetchVouchers(value); // Fetch vouchers based on selected branch
     };
 
@@ -109,6 +111,10 @@ const VoucherList = () => {
         }
     };
     const searchVouchers = async (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+            setError('Please enter a search term');
+            return;
+        }
         try {
             const response = await api.get(`/api/business/vouchers/search`, {
                 params: { searchTerm },
@@ -148,6 +154,8 @@ const VoucherList = () => {
         }
     };
     const handleSearch = () => {
+        setVouchers([]);  // Clear previous results
+        setError('');     // Clear any previous errors
         searchVouchers(searchTerm); // Send search term to the backend
     };
 
