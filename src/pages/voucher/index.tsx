@@ -7,7 +7,7 @@ import { Input } from '../../components/components/ui/input';
 import { Button } from '../../components/components/ui/button';
 import router from 'next/router';
 
-interface voucher {
+interface Voucher {
     listing_id: number;
     name: string;
     description: string;
@@ -37,7 +37,7 @@ interface BusinessRegistration {
 
 const VoucherList = () => {
 
-    const [vouchers, setVouchers] = useState<voucher[]>([]);
+    const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [error, setError] = useState('');
     const [outlets, setOutlets] = useState<Outlet[]>([]);
     const [businessRegistration, setBusinessRegistration] = useState<BusinessRegistration | null>(null);
@@ -102,21 +102,51 @@ const VoucherList = () => {
         }
     };
 
-    const handleEdit = (listingId: number) => {
-        //router.push(`/editVoucher/${listingId}`);
+    const handleEdit = (voucher: Voucher) => {
+        router.push({
+            pathname: '/editVoucher',
+            query: {
+                listing_id: voucher.listing_id,
+                name: voucher.name,
+                description: voucher.description,
+                price: voucher.price,
+                discount: voucher.discount,
+                voucherImage: voucher.voucherImage,
+            },
+        });
     };
 
+
+
+
+
+
     const handleDelete = async (listingId: number) => {
-        /*
+        const confirmDelete = confirm('Are you sure you want to delete this voucher?');
+
+        if (!confirmDelete) {
+            return; // If the user cancels the delete action
+        }
+
         try {
-            await api.delete(`/api/business/voucher/${listingId}`);
-            setVouchers(vouchers.filter(voucher => voucher.listing_id !== listingId));
+            // Make the API call to delete the voucher
+            const response = await api.delete(`/api/business/vouchers/${listingId}`);
+
+            if (response.status === 200) {
+                // Update the vouchers state to remove the deleted voucher
+                setVouchers((prevVouchers) =>
+                    prevVouchers.filter((voucher) => voucher.listing_id !== listingId)
+                );
+                setError(''); // Clear any existing error message
+            } else {
+                setError(response.data.message || 'Failed to delete voucher');
+            }
         } catch (err) {
             console.error('Error deleting voucher:', err);
             setError('An error occurred while deleting the voucher');
         }
-        */
     };
+
 
     return (
         <div>
@@ -185,7 +215,7 @@ const VoucherList = () => {
                                 <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
                                 <div className="flex justify-between">
                                     <Button
-                                        onClick={() => handleEdit(voucher.listing_id)}
+                                        onClick={() => handleEdit(voucher)}
                                         variant="default"
                                     >
                                         Edit
