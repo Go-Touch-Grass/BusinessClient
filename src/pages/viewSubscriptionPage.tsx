@@ -17,12 +17,13 @@ interface Subscription {
 }
 
 const ViewSubscriptions = () => {
-  const router = useRouter();
+
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [renewError, setRenewError] = useState<string | null>(null);
-  const [endError, setEndError] = useState<string | null>(null);
+  const [renewError, setRenewError] = useState<string | null>(null); // For renewal errors
+  const [endError, setEndError] = useState<string | null>(null); // For ending errors
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
@@ -188,7 +189,9 @@ const ViewSubscriptions = () => {
         <p className="text-gray-600 mt-4">Please check back later or subscribe to a new plan.</p>
         <button
           className="mt-6 px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600"
-          onClick={() => { /* Add logic to navigate to subscription page */ }}
+          onClick={() => {
+            router.push('/subscriptionPage'); // navigate to subscription page
+          }}
         >
           Subscribe to a Plan
         </button>
@@ -220,8 +223,9 @@ const ViewSubscriptions = () => {
                 <p>Distance Coverage: {subscription.distance_coverage} km</p>
                 <p>Total Cost: ${subscription.total_cost}</p>
                 <p>Total Gems: {subscription.total_gem} Gems</p>
-                <p>Activation Date: {subscription.activation_date.toLocaleDateString()}</p>
-                <p>Expiration Date: {subscription.expiration_date.toLocaleDateString()}</p>
+                <br />
+                <p>Activated on: {subscription.activation_date.toLocaleDateString()}</p>
+                <p>Expires on: {subscription.expiration_date.toLocaleDateString()}</p>
 
                 <p className="text-green-700">{calculateTimeLeft(subscription.expiration_date)}</p>
 
