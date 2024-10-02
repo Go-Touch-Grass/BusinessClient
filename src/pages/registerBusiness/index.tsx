@@ -31,7 +31,7 @@ import {
     HoverCardTrigger,
 } from "@/components/Register/ui/hover-card"
 import api from '@/api';
-
+import withAuth from '../withAuth';
 
 
 const formSchema = z.object({
@@ -332,4 +332,4 @@ const Register = () => {
         ;
 };
 
-export default Register;
+export default withAuth(Register);
