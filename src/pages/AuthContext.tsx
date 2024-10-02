@@ -8,9 +8,17 @@ export const AuthProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
+        /*
         const username = Cookies.get('username');
         if (username) {
             setIsLoggedIn(true);
+        }*/
+        // Check if the JWT token exists in cookies
+        const token = Cookies.get('authToken');
+        if (token) {
+            setIsLoggedIn(true); // User is logged in if the token exists
+        } else {
+            setIsLoggedIn(false); // If no token is found, user is logged out
         }
     }, []);
 

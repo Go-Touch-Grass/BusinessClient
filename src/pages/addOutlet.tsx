@@ -53,9 +53,9 @@ const AddOutletPage: React.FC = () => {
     }
 
     try {
-      const username = Cookies.get('username'); // Get username from cookies
-      if (!username) {
-        setError('No username found in cookies');
+      const token = Cookies.get('authToken'); // Get token
+      if (!token) {
+        setError('No token found. Please log in.');
         return;
       }
 
@@ -68,7 +68,8 @@ const AddOutletPage: React.FC = () => {
         formData.append('image', image);
       }
 
-      const response = await api.post(`/api/business/outlets/${username}`, formData);
+      //const response = await api.post(`/api/business/outlets/${username}`, formData);
+      const response = await api.post(`/api/business/outlets`, formData);
 
       if (response.status === 201) {
         console.log('Outlet added successfully');
