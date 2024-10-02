@@ -6,6 +6,7 @@ import { Input } from '../../../components/components/ui/input';
 import { Button } from '../../../components/components/ui/button';
 import { Label } from '../../../components/components/ui/label';
 import { Textarea } from '../../../components/components/ui/textarea';
+import router from 'next/router';
 
 const CreateVoucherPage = () => {
     const [name, setName] = useState('');
@@ -86,6 +87,7 @@ const CreateVoucherPage = () => {
 
             if (response.status === 201) {
                 setSuccess('Voucher created successfully');
+                router.push('/voucher'); // Redirect to voucher listing page
             } else {
                 setError('Failed to create voucher');
             }
@@ -123,7 +125,7 @@ const CreateVoucherPage = () => {
             </div>
 
             <div>
-                <Label>Price:</Label>
+                <Label>Original Price:</Label>
                 <Input
                     type="number"
                     value={price}
@@ -134,7 +136,7 @@ const CreateVoucherPage = () => {
             </div>
 
             <div>
-                <Label>Discount:</Label>
+                <Label>Discount to apply:</Label>
                 <Input
                     type="number"
                     value={discount}
@@ -146,7 +148,8 @@ const CreateVoucherPage = () => {
             {/* Conditionally render outlet selection if there are outlets */}
             {outlets.length > 0 && (
                 <div>
-                    <Label>Select Outlet (optional):</Label>
+                    <Label>Select Outlet (Listing would be added to Main Branch if not chosen):</Label>
+                    <br />
                     <select value={selectedOutlet || ''} onChange={(e) => setSelectedOutlet(e.target.value)}>
                         <option value="">-- Select an Outlet --</option>
                         {outlets.map((outlet) => (
@@ -157,7 +160,7 @@ const CreateVoucherPage = () => {
                     </select>
                 </div>
             )}
-            <br />
+            <br /><br /><br /><br />
             <Button onClick={handleSubmit}>Create Voucher</Button>
         </div>
     );

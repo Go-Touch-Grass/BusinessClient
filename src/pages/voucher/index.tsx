@@ -6,6 +6,7 @@ import { Label } from '../../components/components/ui/label';
 import { Input } from '../../components/components/ui/input';
 import { Button } from '../../components/components/ui/button';
 import router from 'next/router';
+import { isAxiosError } from 'axios';
 
 interface Voucher {
     listing_id: number;
@@ -42,6 +43,7 @@ const VoucherList = () => {
     const [outlets, setOutlets] = useState<Outlet[]>([]);
     const [businessRegistration, setBusinessRegistration] = useState<BusinessRegistration | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<string>(''); // store business_id or outlet_id
+    const [searchTerm, setSearchTerm] = useState(''); // Single search term
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -68,6 +70,7 @@ const VoucherList = () => {
         fetchProfile();
     }, []);
 
+
     const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         // Prevent selecting the "Select a Branch" option (empty value)
@@ -92,14 +95,60 @@ const VoucherList = () => {
 
             if (response.status === 200) {
                 setVouchers(response.data.vouchers);
-            } else {
+            } else if (response.status === 404) {
                 setVouchers([]);
-                setError(response.data.message || 'No vouchers found');
+                setError('');  // Clear error for 404 case to show no voucher message.
+            }
+            else {
+                setVouchers([]);
+                setError('An error occurred while fetching vouchers');
             }
         } catch (error) {
             console.error('Error fetching vouchers:', error);
             setError('Error fetching vouchers');
         }
+    };
+    const searchVouchers = async (searchTerm: string) => {
+        try {
+            const response = await api.get(`/api/business/vouchers/search`, {
+                params: { searchTerm },
+            });
+
+            if (response.status === 200) {
+                if (response.data.vouchers.length === 0) {
+                    // If no vouchers are found, set a message instead of an error
+                    setVouchers([]);
+                    setError('No results found');
+                } else {
+                    // If vouchers are found, clear the error message and set vouchers
+                    setVouchers(response.data.vouchers);
+                    setError(''); // Clear error if successful
+                }
+            } else if (response.status === 404) {
+                setVouchers([]);
+                setError('No vouchers found');
+            } else {
+                setError('An error occurred while fetching vouchers');
+            }
+        } catch (error) {
+            console.error('Error fetching vouchers:', error);
+
+            if (isAxiosError(error)) {
+                if (error.response && error.response.status === 404) {
+                    setVouchers([]);
+                    setError('No results found');
+                } else {
+                    setError(error.message);
+                }
+            } else if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError('Error fetching vouchers');
+            }
+        }
+    };
+    const handleSearch = () => {
+        searchVouchers(searchTerm); // Send search term to the backend
     };
 
     const handleEdit = (voucher: Voucher) => {
@@ -148,10 +197,23 @@ const VoucherList = () => {
     };
 
 
+    //console.log('vouchers:', vouchers);
+    //console.log('error:', error);
     return (
         <div>
             <h1>View Vouchers</h1>
-            <div className='flex justify-between items-center'>
+
+            {/* Single Search Box */}
+            <div className="flex space-x-4 mb-10">
+                <Input
+                    placeholder="Search vouchers by name, description or price"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Button onClick={handleSearch}>Search</Button>
+            </div>
+
+            <div className='flex justify-between items-center space-y-2'>
                 <h2 className='text-lg font-semibold'>Your Outlets</h2>
 
                 {/* Existing Add Outlet Button */}
@@ -183,54 +245,63 @@ const VoucherList = () => {
                 ))}
             </select>
 
-            {/* Error message if any */}
-            {error && <p className="text-red-500">{error}</p>}
+            <div className="flex justify-between items-center space-y-4"></div>
 
             {/* Display vouchers */}
             <br />
             <div className="container mx-auto">
                 <h1 className="text-2xl font-bold mb-6">Manage Vouchers</h1>
 
-                {error && <p className="text-red-500">{error}</p>}
-
                 {vouchers.length === 0 ? (
                     <p>No vouchers available.</p>
+                ) : error === 'No results found' ? (
+                    <p>No results found.</p>
+                ) : error && error !== 'No results found' ? (
+                    <p className="text-red-500">{error}</p>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {vouchers.map((voucher) => (
-                            <div
-                                key={voucher.listing_id}
-                                className="border rounded-lg shadow-lg p-4 bg-white"
-                            >
-                                {voucher.voucherImage && (
-                                    <img
-                                        src={voucher.voucherImage}
-                                        alt={voucher.name}
-                                        className="w-full h-48 object-cover mb-4 rounded"
-                                    />
-                                )}
-                                <h3 className="text-xl font-semibold mb-2">{voucher.name}</h3>
-                                <p className="text-gray-700 mb-2">{voucher.description}</p>
-                                <p className="text-gray-900 font-bold mb-2">Price: ${voucher.price}</p>
-                                <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
-                                <div className="flex justify-between">
-                                    <Button
-                                        onClick={() => handleEdit(voucher)}
-                                        variant="default"
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        onClick={() => handleDelete(voucher.listing_id)}
-                                        variant="destructive"
-                                    >
-                                        Delete
-                                    </Button>
+                        {vouchers.map((voucher) => {
+                            const discountedPrice = (voucher.price - (voucher.price * voucher.discount / 100)).toFixed(2);
+                            return (
+                                <div
+                                    key={voucher.listing_id}
+                                    className="border rounded-lg shadow-lg p-4 bg-white"
+                                >
+                                    {voucher.voucherImage && (
+                                        <img
+                                            src={voucher.voucherImage}
+                                            alt={voucher.name}
+                                            className="w-full h-48 object-cover mb-4 rounded"
+                                        />
+                                    )}
+                                    <h3 className="text-xl font-semibold mb-2">{voucher.name}</h3>
+                                    <p className="text-gray-700 mb-2">{voucher.description}</p>
+                                    <p className="text-gray-900 font-bold mb-2">
+                                        Price: <span className="line-through">${voucher.price}</span>{' '}
+                                        <span className="text-green-500">${discountedPrice}</span>
+                                    </p>
+                                    <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
+                                    <div className="flex justify-between">
+                                        <Button
+                                            onClick={() => handleEdit(voucher)}
+                                            variant="default"
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleDelete(voucher.listing_id)}
+                                            variant="destructive"
+                                        >
+                                            Delete
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
-                )}
+                )
+                }
+
             </div>
         </div>
     );
