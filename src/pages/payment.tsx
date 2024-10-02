@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useRouter } from 'next/router';
-import axios from 'axios';
 import api from '@/api';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -70,7 +69,8 @@ const PaymentPage: React.FC = () => {
       
       // Call your backend API to update the gem balance after successful payment
       await api.post('/api/business/top_up_gems', {
-        amount: gems,  // Add gems to the business account
+        currency_cents: price,  // Amount paid in cents
+        gems_added: gems,  // Add gems to the business account
       });
     }
 
