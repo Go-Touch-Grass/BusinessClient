@@ -17,11 +17,11 @@ const CreateAvatar: React.FC = () => {
 	const [customization, setCustomization] = useState<{
 		[ItemType.HAT]: Item | null;
 		[ItemType.SHIRT]: Item | null;
-		[ItemType.BOTTOMS]: Item | null;
+		[ItemType.BOTTOM]: Item | null;
 	}>({
 		[ItemType.HAT]: null,
 		[ItemType.SHIRT]: null,
-		[ItemType.BOTTOMS]: null,
+		[ItemType.BOTTOM]: null,
 	});
 	const [selectedCategory, setSelectedCategory] = useState<ItemType | "">(
 		""
@@ -60,7 +60,7 @@ const CreateAvatar: React.FC = () => {
 				AvatarType.BUSINESS,
 				customization[ItemType.HAT]?.id || null,
 				customization[ItemType.SHIRT]?.id || null,
-				customization[ItemType.BOTTOMS]?.id || null,
+				customization[ItemType.BOTTOM]?.id || null,
 			);
 			
 			setSuccessMessage('Avatar created successfully!');
@@ -137,10 +137,10 @@ const CreateAvatar: React.FC = () => {
 							className="absolute top-[-5px] left-[38px]"
 						/>
 					)}
-					{customization[ItemType.BOTTOMS] && (
+					{customization[ItemType.BOTTOM] && (
 						<Image
-							src={customization[ItemType.BOTTOMS].filepath}
-							alt={customization[ItemType.BOTTOMS].name}
+							src={customization[ItemType.BOTTOM].filepath}
+							alt={customization[ItemType.BOTTOM].name}
 							width={160}
 							height={100}
 							className="absolute top-[115px] left-[5px]"
@@ -192,12 +192,12 @@ const CreateAvatar: React.FC = () => {
 				<Button
 					onClick={() =>
 						setSelectedCategory(
-							ItemType.BOTTOMS
+							ItemType.BOTTOM
 						)
 					}
 					variant={
 						selectedCategory ===
-						ItemType.BOTTOMS
+						ItemType.BOTTOM
 							? "default"
 							: "outline"
 					}

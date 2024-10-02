@@ -4,7 +4,7 @@ import Cookies from "js-cookie";
 export enum ItemType {
 	HAT = "hat",
 	SHIRT = "shirt",
-	BOTTOMS = "bottoms",
+	BOTTOM = "bottom",
 }
 
 export interface Item {
