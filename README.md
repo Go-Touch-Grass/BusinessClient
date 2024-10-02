@@ -1,3 +1,8 @@
+## Setup
+
+1. Create a `.env` file in the root directory using `.env.example` as an example
+2. In the `.env` file, add the keys according to the `env.example`. Refer to the "Secret List" Google Doc on our shared Google Drive folder
+
 ## Running the local host
 
 Install dependencies first
