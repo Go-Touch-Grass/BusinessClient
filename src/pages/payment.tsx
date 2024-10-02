@@ -1,27 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { useRouter } from 'next/router';
 import axios from 'axios';
 import api from '@/api';
 
-// Load Stripe with your publishable key
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 const PaymentPage: React.FC = () => {
   const stripe = useStripe();
   const elements = useElements();
+  const router = useRouter();
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [gems, setGems] = useState<number | null>(null);
+  const [price, setPrice] = useState<number | null>(null);
+
+  // Get bundle info from query parameters
+  useEffect(() => {
+    if (router.query.gems && router.query.price) {
+      setGems(parseInt(router.query.gems as string, 10));
+      setPrice(parseInt(router.query.price as string, 10));
+    }
+  }, [router.query]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setPaymentProcessing(true);
 
+    if (!gems || !price) {
+      setErrorMessage('Invalid gem bundle');
+      setPaymentProcessing(false);
+      return;
+    }
+
     // Call your backend API to create a PaymentIntent and get the clientSecret
     const { clientSecret } = await api
       .post('/api/payment/create-payment-intent', {
-        amount: 1000, // in cents (i.e. $10.00)
+        amount: price, // in cents
         currency: 'sgd',
       })
       .then(response => response.data)
@@ -50,6 +67,11 @@ const PaymentPage: React.FC = () => {
       setErrorMessage(error.message || 'Payment failed');
     } else if (paymentIntent?.status === 'succeeded') {
       setSuccessMessage('Payment succeeded!');
+      
+      // Call your backend API to update the gem balance after successful payment
+      await api.post('/api/business/top_up_gems', {
+        amount: gems,  // Add gems to the business account
+      });
     }
 
     setPaymentProcessing(false);
@@ -57,9 +79,10 @@ const PaymentPage: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit}>
+      <h2>Pay for {gems} gems (${price && price / 100})</h2>
       <CardElement />
       <button type="submit" disabled={!stripe || paymentProcessing}>
-        {paymentProcessing ? 'Processing...' : 'Pay $10'}
+        {paymentProcessing ? 'Processing...' : `Pay $${price && price / 100}`}
       </button>
       {errorMessage && <div style={{ color: 'red' }}>{errorMessage}</div>}
       {successMessage && <div style={{ color: 'green' }}>{successMessage}</div>}
@@ -67,7 +90,6 @@ const PaymentPage: React.FC = () => {
   );
 };
 
-// Wrap your component with Stripe's Elements
 const PaymentWrapper: React.FC = () => (
   <Elements stripe={stripePromise}>
     <PaymentPage />
