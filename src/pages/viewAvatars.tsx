@@ -46,7 +46,7 @@ const ViewAvatars: React.FC = () => {
     };
 
     const renderAvatar = (avatar: Avatar) => (
-        <div className="relative w-[170px] h-[170px]">
+        <div className="relative w-[170px] h-[170px] cursor-pointer" onClick={() => handleAvatarClick(avatar.id)}>
             <Image
                 src="/sprites/avatar_base.png"
                 alt="Avatar"
@@ -82,6 +82,14 @@ const ViewAvatars: React.FC = () => {
             )}
         </div>
     );
+
+    const handleAvatarClick = (avatarId: number) => {
+        // Navigate to the editAvatar page, passing the avatar ID
+        router.push({
+            pathname: '/editAvatar',
+            query: { avatarId: avatarId.toString() },
+        });
+    };
 
     const handleBack = () => {
         router.push('/avatarManagement');

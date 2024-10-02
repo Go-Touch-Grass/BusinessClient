@@ -98,6 +98,34 @@ export const getBusinessAvatars = async (username: string): Promise<Avatar[]> =>
 	}
 };
 
+export const getAvatarById = async (id: number): Promise<AvatarInfo> => {
+  
+	try {
+	  const response = await api.get(`/api/avatars/${id}`, {
+		headers: authHeader(),
+	  });
+	  return response.data;
+	} catch (error: any) {
+	  console.error('Error fetching avatar:', error);
+	  throw handleApiError(error);
+	}
+  };
+
+  export const updateAvatar = async (
+	avatarId: number,
+	updatedInfo: { hatId?: number; shirtId?: number; bottomId?: number }
+  ): Promise<AvatarInfo> => {
+
+	try {
+	  const response = await api.put(`/api/avatars/${avatarId}`, updatedInfo, {
+		headers: authHeader(),
+	  });
+	  return response.data;
+	} catch (error: any) {
+	  console.error('Error updating avatar:', error);
+	  throw handleApiError(error);
+	}
+  };
 function handleApiError(error): Error {
 	if (error.response) {
 		console.error("Error response:", error.response.data);
