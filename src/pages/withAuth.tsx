@@ -10,10 +10,17 @@ const withAuth = (WrappedComponent: React.FC) => {
     const router = useRouter();
 
     useEffect(() => {
+      /*
       const username = Cookies.get('username');
       if (!username) {
         router.replace('/login');
       }
+        */
+      const token = Cookies.get('authToken'); // Check for the token
+      if (!token) {
+        router.replace('/login'); // Redirect to login if no token is found
+      }
+
     }, [router]);
 
     return <WrappedComponent {...props} />;

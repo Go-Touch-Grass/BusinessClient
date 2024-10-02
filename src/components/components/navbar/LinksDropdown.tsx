@@ -30,20 +30,37 @@ const LinksDropdown = () => {
     { label: 'About', href: '/about' },
   ];
 
+  const clearAllCookies = () => {
+    const allCookies = Cookies.get();
+    Object.keys(allCookies).forEach(cookieName => Cookies.remove(cookieName));
+    console.log('All cookies cleared:', Cookies.get());
+  };
+
   // Logout handler
   const handleLogout = () => {
     // Remove cookies and reset auth state
-    Cookies.remove('username');
+    clearAllCookies();
     setIsLoggedIn(false);
     router.push('/'); // Redirect to homepage or login
+    console.log('Logout process initiated');
+
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.href);
+      window.onpopstate = function () {
+        router.replace("/");
+      };
+    }
   };
 
   // If logged in, add additional links
   if (isLoggedIn) {
     links = [
       { label: 'Profile', href: '/profile' },
+      { label: 'Map', href: '/map' },
       { label: 'Register Business', href: '/registerBusiness' },
       //...links, //  original links from logged out view 
+      { label: 'View Subscriptions', href: '/viewSubscriptionPage' },
+
       { label: 'Logout', href: '#', onClick: handleLogout },
     ];
   }
