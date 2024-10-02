@@ -45,8 +45,8 @@ const LinksDropdown = () => {
     console.log('Logout process initiated');
 
     if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', window.location.href);
-      window.onpopstate = function () {
+      window.history.replaceState(null, '', window.location.href); // Disable the back button by replacing the current state in history
+      window.onpopstate = function () { // Prevent the user from going back to a protected page using the back button
         router.replace("/");
       };
     }

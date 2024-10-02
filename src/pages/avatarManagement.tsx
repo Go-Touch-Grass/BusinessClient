@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image'; // Using next.js's Image component for optimized images
+import withAuth from './withAuth';
 
 interface Item {
   name: string;
@@ -9,13 +10,13 @@ interface Item {
 
 // Sample wardrobe items
 const hats: Item[] = [
-  { name: 'Baseball Cap', image: require ('../assets/sprites/baseball_cap.png') },
-  { name: 'Cowboy Hat', image: require ('../assets/sprites/cowboy_hat.png') },
+  { name: 'Baseball Cap', image: require('../assets/sprites/baseball_cap.png') },
+  { name: 'Cowboy Hat', image: require('../assets/sprites/cowboy_hat.png') },
 ];
 
 const upperWear: Item[] = [
-  { name: 'Love Shirt', image: require ('../assets/sprites/love_shirt.png') },
-  { name: 'White Shirt', image: require ('../assets/sprites/white_shirt.png') },
+  { name: 'Love Shirt', image: require('../assets/sprites/love_shirt.png') },
+  { name: 'White Shirt', image: require('../assets/sprites/white_shirt.png') },
 ];
 
 const lowerWear: Item[] = [
@@ -25,7 +26,7 @@ const lowerWear: Item[] = [
 
 const AvatarManagement: React.FC = () => {
   const router = useRouter();
-  const [avatar, setAvatar] = useState('/images/avatar_base.png'); 
+  const [avatar, setAvatar] = useState('/images/avatar_base.png');
   const [customization, setCustomization] = useState<{
     hat: Item | null;
     upperWear: Item | null;
@@ -48,7 +49,7 @@ const AvatarManagement: React.FC = () => {
 
       if (response.customer_account && response.token) {
         console.log('Avatar saved with customization:', customization);
-        router.push('/profile'); 
+        router.push('/profile');
       }
     } catch (error) {
       console.error('Error saving avatar:', error);
@@ -123,7 +124,7 @@ const AvatarManagement: React.FC = () => {
               className='absolute top-[76px] left-[32px]' // Adjust these values as needed
             />
           )}
-    
+
         </div>
       </div>
 
@@ -152,9 +153,9 @@ const AvatarManagement: React.FC = () => {
       {/* Wardrobe Items */}
       <div className='mt-6 overflow-x-auto'>
         <div className='mt-6 flex justify-center'>
-            {renderWardrobeItems()}
+          {renderWardrobeItems()}
         </div>
-        </div>
+      </div>
 
       {/* Save Avatar Button */}
       <div className='mt-6'>
@@ -166,4 +167,4 @@ const AvatarManagement: React.FC = () => {
   );
 };
 
-export default AvatarManagement;
+export default withAuth(AvatarManagement);

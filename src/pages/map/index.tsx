@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 import api from '@/api';
 import MapComponent from "@/components/map/mapComponent";
 import { useRouter } from 'next/router';
-
+import withAuth from '../withAuth';
 interface BusinessAccount {
     firstName: string;
     lastName: string;
@@ -140,4 +140,4 @@ const BusinessMap = () => {
     );
 };
 
-export default BusinessMap;
+export default withAuth(BusinessMap);
