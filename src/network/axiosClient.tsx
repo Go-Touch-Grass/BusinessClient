@@ -1,40 +1,13 @@
 import axios from "axios";
 
-//consider implementing redux and for future JWT implementation
-// const getToken = () => {
-//     const state = store.getState();
-//     return state.auth.token;
-//   };
-
-const axiosClient = axios.create({
-  //todo for XY: update after BE is fully configured
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+const GLBAxiosInstance = axios.create({
+  // headers: {
+  //   "X-APP-ID": "66f4fea70b01ac5ee87a4d79",
+  //   "X-API-Key": "sk_live_3HvRKIj8z1mVyX806VXl-USrl2rB5X0kMBUH",
+  // },
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": "multipart/form-data",
   },
 });
 
-//TODO for XY: update after JWT implementation
-// axiosClient.interceptors.request.use(
-//     (config) => {
-//       const token = getToken();
-//       if (token) {
-//         config.headers["Authorization"] = `Bearer ${token}`;
-//       }
-//       return config;
-//     },
-//     (error) => Promise.reject(error),
-//   );
-
-// axiosClient.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     let res = error.response;
-//     if (res && res.status == 401) {
-//       // TODO: Handle unauthorised error
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
-export default axiosClient;
+export default GLBAxiosInstance;
