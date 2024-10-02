@@ -1,31 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Image from 'next/image'; // Using next.js's Image component for optimized images
+import axios from 'axios';
+import Image from 'next/image';
 
 interface Item {
+  id: number;
   name: string;
-  image: string; // Assuming URLs for web assets
+  type: 'hat' | 'upperWear' | 'lowerWear';
+  filepath: string;
 }
-
-// Sample wardrobe items
-const hats: Item[] = [
-  { name: 'Baseball Cap', image: require ('../assets/sprites/baseball_cap.png') },
-  { name: 'Cowboy Hat', image: require ('../assets/sprites/cowboy_hat.png') },
-];
-
-const upperWear: Item[] = [
-  { name: 'Love Shirt', image: require ('../assets/sprites/love_shirt.png') },
-  { name: 'White Shirt', image: require ('../assets/sprites/white_shirt.png') },
-];
-
-const lowerWear: Item[] = [
-  { name: 'Blue Skirt', image: require('../assets/sprites/blue_skirt.png') },
-  { name: 'Purple Pants', image: require('../assets/sprites/purple_pants.png') },
-];
 
 const AvatarManagement: React.FC = () => {
   const router = useRouter();
-  const [avatar, setAvatar] = useState('/images/avatar_base.png'); 
+  const [avatar, setAvatar] = useState('/images/base_avatar.png'); // Default base avatar
+  const [items, setItems] = useState<Item[]>([]);
   const [customization, setCustomization] = useState<{
     hat: Item | null;
     upperWear: Item | null;
@@ -38,24 +26,77 @@ const AvatarManagement: React.FC = () => {
 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
-  // Function to handle avatar save
+  // Fetch the avatar customization (if available)
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      try {
+        const response = await axios.get('/api/avatar'); // Fetch avatar data (GET request)
+        const { hatId, upperWearId, lowerWearId, avatarId } = response.data;
+
+        if (avatarId) {
+          // Fetching corresponding items based on avatar data
+          const [hat, upperWear, lowerWear] = await Promise.all([
+            hatId ? axios.get(`/api/item/${hatId}`) : null,
+            upperWearId ? axios.get(`/api/item/${upperWearId}`) : null,
+            lowerWearId ? axios.get(`/api/item/${lowerWearId}`) : null,
+          ]);
+
+          setCustomization({
+            hat: hat?.data || null,
+            upperWear: upperWear?.data || null,
+            lowerWear: lowerWear?.data || null,
+          });
+        } else {
+          setAvatar('/images/base_avatar.png'); // Default base avatar
+        }
+      } catch (error) {
+        console.error('Error fetching avatar data:', error);
+      }
+    };
+
+    fetchAvatar();
+  }, []);
+
+  // Fetch available wardrobe items
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await axios.get('/api/items'); // Fetch all available items
+        setItems(response.data);
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      }
+    };
+
+    fetchItems();
+  }, []);
+
+  // Save or update avatar
   const handleSaveAvatar = async () => {
     try {
-      const response = {
-        customer_account: 'sampleAccount', // Dummy response for now
-        token: 'sampleToken',
+      const avatarData = {
+        hatId: customization.hat?.id || null,
+        upperWearId: customization.upperWear?.id || null,
+        lowerWearId: customization.lowerWear?.id || null,
       };
 
-      if (response.customer_account && response.token) {
-        console.log('Avatar saved with customization:', customization);
-        router.push('/profile'); 
+      if (avatar === '/images/base_avatar.png') {
+        // New avatar creation (POST request)
+        const response = await axios.post('/api/avatar', avatarData);
+        console.log('New avatar created:', response.data);
+      } else {
+        // Update existing avatar (PUT request)
+        const response = await axios.put('/api/avatar', avatarData);
+        console.log('Avatar updated:', response.data);
       }
+
+      router.push('/profile'); // Navigate to the profile page after saving
     } catch (error) {
       console.error('Error saving avatar:', error);
     }
   };
 
-  // Function to update the selected customization item
+  // Update customization based on selected item
   const handleSelectItem = (category: string, item: Item) => {
     setCustomization((prev) => ({
       ...prev,
@@ -63,18 +104,25 @@ const AvatarManagement: React.FC = () => {
     }));
   };
 
-  // Render wardrobe items based on the selected category
+  // Filter and render wardrobe items based on the selected category
   const renderWardrobeItems = () => {
-    let items: Item[] = [];
-    if (selectedCategory === 'hat') items = hats;
-    else if (selectedCategory === 'upperWear') items = upperWear;
-    else if (selectedCategory === 'lowerWear') items = lowerWear;
+    const filteredItems = items.filter((item) => item.type === selectedCategory);
 
     return (
       <div className='flex space-x-4 overflow-x-auto'>
-        {items.map((item, index) => (
-          <div key={index} onClick={() => handleSelectItem(selectedCategory, item)} className='cursor-pointer'>
-            <Image src={item.image} alt={item.name} width={64} height={64} className='rounded border' />
+        {filteredItems.map((item) => (
+          <div
+            key={item.id}
+            onClick={() => handleSelectItem(selectedCategory, item)}
+            className='cursor-pointer'
+          >
+            <Image
+              src={item.filepath}
+              alt={item.name}
+              width={64}
+              height={64}
+              className='rounded border'
+            />
           </div>
         ))}
       </div>
@@ -96,34 +144,33 @@ const AvatarManagement: React.FC = () => {
           {/* Hat overlay */}
           {customization.hat && (
             <Image
-              src={customization.hat.image}
+              src={customization.hat.filepath}
               alt={customization.hat.name}
               width={90}
               height={90}
-              className='absolute top-[-5px] left-[38px]' // Adjust these values to better position the hat
+              className='absolute top-[-5px] left-[38px]'
             />
           )}
           {/* Lower wear overlay */}
           {customization.lowerWear && (
             <Image
-              src={customization.lowerWear.image}
+              src={customization.lowerWear.filepath}
               alt={customization.lowerWear.name}
               width={160}
               height={100}
-              className='absolute top-[115px] left-[5px]' // Adjust these values as needed
+              className='absolute top-[115px] left-[5px]'
             />
           )}
           {/* Upper wear overlay */}
           {customization.upperWear && (
             <Image
-              src={customization.upperWear.image}
+              src={customization.upperWear.filepath}
               alt={customization.upperWear.name}
               width={105}
               height={91}
-              className='absolute top-[76px] left-[32px]' // Adjust these values as needed
+              className='absolute top-[76px] left-[32px]'
             />
           )}
-    
         </div>
       </div>
 
@@ -151,10 +198,8 @@ const AvatarManagement: React.FC = () => {
 
       {/* Wardrobe Items */}
       <div className='mt-6 overflow-x-auto'>
-        <div className='mt-6 flex justify-center'>
-            {renderWardrobeItems()}
-        </div>
-        </div>
+        <div className='mt-6 flex justify-center'>{renderWardrobeItems()}</div>
+      </div>
 
       {/* Save Avatar Button */}
       <div className='mt-6'>
