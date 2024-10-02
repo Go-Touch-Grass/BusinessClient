@@ -1,214 +1,230 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import axios from 'axios';
-import Image from 'next/image';
-
-interface Item {
-  id: number;
-  name: string;
-  type: 'hat' | 'upperWear' | 'lowerWear';
-  filepath: string;
-}
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Image from "next/image";
+import {
+	getItems,
+	createAvatar,
+	AvatarType,
+	Item,
+	ItemType,
+} from "../api/avatarApi";
+import { Button } from "@/components/Register/ui/button";
+import withAuth from "./withAuth";
 
 const AvatarManagement: React.FC = () => {
-  const router = useRouter();
-  const [avatar, setAvatar] = useState('/images/base_avatar.png'); // Default base avatar
-  const [items, setItems] = useState<Item[]>([]);
-  const [customization, setCustomization] = useState<{
-    hat: Item | null;
-    upperWear: Item | null;
-    lowerWear: Item | null;
-  }>({
-    hat: null,
-    upperWear: null,
-    lowerWear: null,
-  });
+	const router = useRouter();
+	const [items, setItems] = useState<Item[]>([]);
+	const [customization, setCustomization] = useState<{
+		[ItemType.HAT]: Item | null;
+		[ItemType.SHIRT]: Item | null;
+		[ItemType.BOTTOMS]: Item | null;
+	}>({
+		[ItemType.HAT]: null,
+		[ItemType.SHIRT]: null,
+		[ItemType.BOTTOMS]: null,
+	});
+	const [selectedCategory, setSelectedCategory] = useState<ItemType | "">(
+		""
+	);
+	const [error, setError] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+	useEffect(() => {
+		fetchItems();
+	}, []);
 
-  // Fetch the avatar customization (if available)
-  useEffect(() => {
-    const fetchAvatar = async () => {
-      try {
-        const response = await axios.get('/api/avatar'); // Fetch avatar data (GET request)
-        const { hatId, upperWearId, lowerWearId, avatarId } = response.data;
+	const fetchItems = async () => {
+		try {
+			const fetchedItems = await getItems();
+			setItems(fetchedItems);
+		} catch (error) {
+			console.error("Error fetching items:", error);
+			setError("Failed to fetch items");
+		}
+	};
 
-        if (avatarId) {
-          // Fetching corresponding items based on avatar data
-          const [hat, upperWear, lowerWear] = await Promise.all([
-            hatId ? axios.get(`/api/item/${hatId}`) : null,
-            upperWearId ? axios.get(`/api/item/${upperWearId}`) : null,
-            lowerWearId ? axios.get(`/api/item/${lowerWearId}`) : null,
-          ]);
+	const handleSelectItem = (item: Item) => {
+		setCustomization((prev) => ({
+			...prev,
+			[item.type]: item,
+		}));
+	};
 
-          setCustomization({
-            hat: hat?.data || null,
-            upperWear: upperWear?.data || null,
-            lowerWear: lowerWear?.data || null,
-          });
-        } else {
-          setAvatar('/images/base_avatar.png'); // Default base avatar
-        }
-      } catch (error) {
-        console.error('Error fetching avatar data:', error);
-      }
-    };
+	const handleCreateAvatar = async () => {
+		setIsLoading(true);
+		setError(null);
+		setSuccessMessage(null);
+		try {
+			const response = await createAvatar(
+				AvatarType.BUSINESS,
+				customization[ItemType.HAT]?.id || null,
+				customization[ItemType.SHIRT]?.id || null,
+				customization[ItemType.BOTTOMS]?.id || null,
+			);
+			
+			setSuccessMessage('Avatar created successfully!');
+			console.log('Created avatar:', response.avatar);
+			console.log('Avatar ID:', response.avatarId);
 
-    fetchAvatar();
-  }, []);
+			setTimeout(() => {
+				router.push('/profile');
+			}, 2000);
+		} catch (error) {
+			console.error('Error creating avatar:', error);
+			setError('Failed to create avatar');
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-  // Fetch available wardrobe items
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await axios.get('/api/items'); // Fetch all available items
-        setItems(response.data);
-      } catch (error) {
-        console.error('Error fetching items:', error);
-      }
-    };
+	const renderWardrobeItems = () => {
+		const filteredItems = items.filter(
+			(item) => item.type === selectedCategory
+		);
 
-    fetchItems();
-  }, []);
+		return (
+			<div className="flex space-x-4 overflow-x-auto">
+				{filteredItems.map((item) => (
+					<div
+						key={item.id}
+						onClick={() => handleSelectItem(item)}
+						className="cursor-pointer"
+					>
+						<Image
+							src={item.filepath}
+							alt={item.name}
+							width={64}
+							height={64}
+							className="rounded border"
+						/>
+					</div>
+				))}
+			</div>
+		);
+	};
 
-  // Save or update avatar
-  const handleSaveAvatar = async () => {
-    try {
-      const avatarData = {
-        hatId: customization.hat?.id || null,
-        upperWearId: customization.upperWear?.id || null,
-        lowerWearId: customization.lowerWear?.id || null,
-      };
+	return (
+		<div className="container mx-auto p-6">
+			<h1 className="text-4xl font-bold text-zinc-700 text-center mb-2 mt-[-10px]">
+				Create Your Avatar
+			</h1>
 
-      if (avatar === '/images/base_avatar.png') {
-        // New avatar creation (POST request)
-        const response = await axios.post('/api/avatar', avatarData);
-        console.log('New avatar created:', response.data);
-      } else {
-        // Update existing avatar (PUT request)
-        const response = await axios.put('/api/avatar', avatarData);
-        console.log('Avatar updated:', response.data);
-      }
+			<div className="flex flex-col items-center mt-4">
+				<div className="relative">
+					<Image
+						src="/sprites/avatar_base.png"
+						alt="Avatar"
+						width={170}
+						height={170}
+					/>
+					{customization[ItemType.HAT] && (
+						<Image
+							src={customization[ItemType.HAT].filepath}
+							alt={customization[ItemType.HAT].name}
+							width={90}
+							height={90}
+							className="absolute top-[-5px] left-[38px]"
+						/>
+					)}
+					{customization[ItemType.BOTTOMS] && (
+						<Image
+							src={customization[ItemType.BOTTOMS].filepath}
+							alt={customization[ItemType.BOTTOMS].name}
+							width={160}
+							height={100}
+							className="absolute top-[115px] left-[5px]"
+						/>
+					)}
+					{customization[ItemType.SHIRT] && (
+						<Image
+							src={customization[ItemType.SHIRT].filepath}
+							alt={customization[ItemType.SHIRT].name}
+							width={105}
+							height={91}
+							className="absolute top-[76px] left-[32px]"
+						/>
+					)}
+				</div>
+			</div>
 
-      router.push('/profile'); // Navigate to the profile page after saving
-    } catch (error) {
-      console.error('Error saving avatar:', error);
-    }
-  };
+			<div className="mt-6 flex justify-center space-x-4">
+				<Button
+					onClick={() =>
+						setSelectedCategory(
+							ItemType.HAT
+						)
+					}
+					variant={
+						selectedCategory ===
+						ItemType.HAT
+							? "default"
+							: "outline"
+					}
+				>
+					Hat
+				</Button>
+				<Button
+					onClick={() =>
+						setSelectedCategory(
+							ItemType.SHIRT
+						)
+					}
+					variant={
+						selectedCategory ===
+						ItemType.SHIRT
+							? "default"
+							: "outline"
+					}
+				>
+					Upper Wear
+				</Button>
+				<Button
+					onClick={() =>
+						setSelectedCategory(
+							ItemType.BOTTOMS
+						)
+					}
+					variant={
+						selectedCategory ===
+						ItemType.BOTTOMS
+							? "default"
+							: "outline"
+					}
+				>
+					Lower Wear
+				</Button>
+			</div>
 
-  // Update customization based on selected item
-  const handleSelectItem = (category: string, item: Item) => {
-    setCustomization((prev) => ({
-      ...prev,
-      [category]: item,
-    }));
-  };
+			<div className="mt-6 overflow-x-auto">
+				<div className="mt-6 flex justify-center">
+					{renderWardrobeItems()}
+				</div>
+			</div>
 
-  // Filter and render wardrobe items based on the selected category
-  const renderWardrobeItems = () => {
-    const filteredItems = items.filter((item) => item.type === selectedCategory);
+			<div className="mt-6 flex justify-center">
+				<Button
+					onClick={handleCreateAvatar}
+					disabled={isLoading}
+				>
+					{isLoading
+						? "Creating..."
+						: "Finish Creating Avatar"}
+				</Button>
+			</div>
 
-    return (
-      <div className='flex space-x-4 overflow-x-auto'>
-        {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => handleSelectItem(selectedCategory, item)}
-            className='cursor-pointer'
-          >
-            <Image
-              src={item.filepath}
-              alt={item.name}
-              width={64}
-              height={64}
-              className='rounded border'
-            />
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  return (
-    <div className='container mx-auto p-6'>
-      {/* Title section */}
-      <h1 className='text-4xl font-bold text-zinc-700 text-center mb-2 mt-[-10px]'>
-        Avatar Management
-      </h1>
-
-      {/* Avatar Display */}
-      <div className='flex flex-col items-center mt-4'>
-        <div className='relative'>
-          {/* Base avatar */}
-          <Image src={avatar} alt='Avatar' width={170} height={170} />
-          {/* Hat overlay */}
-          {customization.hat && (
-            <Image
-              src={customization.hat.filepath}
-              alt={customization.hat.name}
-              width={90}
-              height={90}
-              className='absolute top-[-5px] left-[38px]'
-            />
-          )}
-          {/* Lower wear overlay */}
-          {customization.lowerWear && (
-            <Image
-              src={customization.lowerWear.filepath}
-              alt={customization.lowerWear.name}
-              width={160}
-              height={100}
-              className='absolute top-[115px] left-[5px]'
-            />
-          )}
-          {/* Upper wear overlay */}
-          {customization.upperWear && (
-            <Image
-              src={customization.upperWear.filepath}
-              alt={customization.upperWear.name}
-              width={105}
-              height={91}
-              className='absolute top-[76px] left-[32px]'
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Category Selection */}
-      <div className='mt-6 flex justify-center space-x-4'>
-        <button
-          className={`px-4 py-2 rounded ${selectedCategory === 'hat' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setSelectedCategory('hat')}
-        >
-          Hat
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${selectedCategory === 'upperWear' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setSelectedCategory('upperWear')}
-        >
-          Upper Wear
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${selectedCategory === 'lowerWear' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setSelectedCategory('lowerWear')}
-        >
-          Lower Wear
-        </button>
-      </div>
-
-      {/* Wardrobe Items */}
-      <div className='mt-6 overflow-x-auto'>
-        <div className='mt-6 flex justify-center'>{renderWardrobeItems()}</div>
-      </div>
-
-      {/* Save Avatar Button */}
-      <div className='mt-6'>
-        <button onClick={handleSaveAvatar} className='bg-green-500 text-white px-6 py-2 rounded'>
-          Save Avatar
-        </button>
-      </div>
-    </div>
-  );
+			{error && (
+				<p className="text-red-500 text-center mt-4">
+					{error}
+				</p>
+			)}
+			{successMessage && (
+				<p className="text-green-500 text-center mt-4">
+					{successMessage}
+				</p>
+			)}
+		</div>
+	);
 };
 
-export default AvatarManagement;
+export default withAuth(AvatarManagement);
