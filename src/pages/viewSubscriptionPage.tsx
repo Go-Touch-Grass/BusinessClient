@@ -223,9 +223,8 @@ const ViewSubscriptions = () => {
                 <p>Distance Coverage: {subscription.distance_coverage} km</p>
                 <p>Total Cost: ${subscription.total_cost}</p>
                 <p>Total Gems: {subscription.total_gem} Gems</p>
-                <br />
-                <p>Activated on: {subscription.activation_date.toLocaleDateString()}</p>
-                <p>Expires on: {subscription.expiration_date.toLocaleDateString()}</p>
+                <p>Activation Date: {new Date(subscription.activation_date).toLocaleDateString()}</p>
+                <p>Expiration Date: {new Date(subscription.expiration_date).toLocaleDateString()}</p>
 
                 <p className="text-green-700">{calculateTimeLeft(subscription.expiration_date)}</p>
 

@@ -13,6 +13,7 @@ const EditSubscription = () => {
     const [distanceCoverage, setDistanceCoverage] = useState(0); // Default to 0 km
     const [error, setError] = useState<string | null>(null);
     const [subscriptionId, setSubscriptionId] = useState<number | null>(null);
+    const [success, setSuccess] = useState(false); // Success state
 
     useEffect(() => {
         if (query) {
@@ -29,7 +30,6 @@ const EditSubscription = () => {
             setSubscriptionId(id);
         }
     }, [query]);
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,15 +49,21 @@ const EditSubscription = () => {
 
             console.log('Update response:', response.data);
 
+            // Set success state to true and reset after 3 seconds
+            setSuccess(true);
+            setTimeout(() => {
+                setSuccess(false); // Reset success after 3 seconds
+            }, 3000);
+
         } catch (err) {
             console.error('Update error:', err);
             const error = err as AxiosError;
 
             const errorMessage = error.response?.data as { message?: string };
             setError(errorMessage?.message || 'Error updating subscription');
+            setSuccess(false); // Ensure success is reset if there's an error
         }
     };
-
 
     const isUpgradeAllowed = (newDuration: number) => {
         return newDuration > duration;
@@ -66,7 +72,16 @@ const EditSubscription = () => {
     return (
         <div className="min-h-screen flex flex-col items-center bg-gradient-to-b from-green-100 to-white p-10">
             <h2 className="text-3xl font-bold text-green-600 mb-6">Edit Subscription</h2>
+
+            {/* Disclaimer Section */}
+            <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                <p className="font-bold">Important:</p>
+                <p>You can only upgrade your subscription duration or distance coverage. Downgrading is not allowed.</p>
+            </div>
+
             {error && <p className="text-red-600">{error}</p>}
+            {success && <p className="text-green-600 mb-4">Subscription updated successfully!</p>} {/* Success message */}
+
             <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-8 w-full max-w-xl">
                 <div className="mb-4">
                     <label className="block text-gray-700">Title:</label>
@@ -112,8 +127,13 @@ const EditSubscription = () => {
                         className="border border-gray-300 rounded w-full p-2"
                     />
                 </div>
-                <button type="submit" className="p-2 rounded bg-blue-500 text-white">
-                    Update Subscription
+
+                <button
+                    type="submit"
+                    className={`p-2 rounded text-white ${success ? 'bg-green-500' : 'bg-blue-500'}`}
+                    disabled={success} // Disable button momentarily after success
+                >
+                    {success ? 'Updated!' : 'Update Subscription'}
                 </button>
             </form>
         </div>
