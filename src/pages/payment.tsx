@@ -1,10 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { useRouter } from 'next/router';
-import api from '@/api';
+import React, { useState, useEffect } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { useRouter } from "next/router";
+import withAuth from "./withAuth";
+import api from "@/api";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/components/button";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
 const PaymentPage: React.FC = () => {
   const stripe = useStripe();
@@ -25,24 +35,24 @@ const PaymentPage: React.FC = () => {
   }, [router.query]);
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+    //event.preventDefault();
     setPaymentProcessing(true);
 
     if (!gems || !price) {
-      setErrorMessage('Invalid gem bundle');
+      setErrorMessage("Invalid gem bundle");
       setPaymentProcessing(false);
       return;
     }
 
     // Call your backend API to create a PaymentIntent and get the clientSecret
     const { clientSecret } = await api
-      .post('/api/payment/create-payment-intent', {
-        amount: price, // in cents
-        currency: 'sgd',
+      .post("/api/payment/create-payment-intent", {
+        amount: price * 100, // in cents
+        currency: "sgd",
       })
-      .then(response => response.data)
-      .catch(error => {
-        setErrorMessage('Error creating payment intent');
+      .then((response) => response.data)
+      .catch((error) => {
+        setErrorMessage("Error creating payment intent");
         setPaymentProcessing(false);
         return { clientSecret: null };
       });
@@ -51,26 +61,27 @@ const PaymentPage: React.FC = () => {
 
     const cardElement = elements?.getElement(CardElement);
     if (!cardElement) {
-      setErrorMessage('Card information not found.');
+      setErrorMessage("Card information not found.");
       return;
     }
 
     // Confirm the payment using the clientSecret
-    const { error, paymentIntent } = await stripe?.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement,
-      },
-    }) || {};
+    const { error, paymentIntent } =
+      (await stripe?.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        },
+      })) || {};
 
     if (error) {
-      setErrorMessage(error.message || 'Payment failed');
-    } else if (paymentIntent?.status === 'succeeded') {
-      setSuccessMessage('Payment succeeded!');
-      
+      setErrorMessage(error.message || "Payment failed");
+    } else if (paymentIntent?.status === "succeeded") {
+      setSuccessMessage("Payment succeeded!");
+
       // Call your backend API to update the gem balance after successful payment
-      await api.post('/api/business/top_up_gems', {
-        currency_cents: price,  // Amount paid in cents
-        gems_added: gems,  // Add gems to the business account
+      await api.post("/api/business/top_up_gems", {
+        currency_cents: price, // Amount paid in cents
+        gems_added: gems, // Add gems to the business account
       });
     }
 
@@ -78,15 +89,33 @@ const PaymentPage: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Pay for {gems} gems (${price && price / 100})</h2>
-      <CardElement />
-      <button type="submit" disabled={!stripe || paymentProcessing}>
-        {paymentProcessing ? 'Processing...' : `Pay $${price && price / 100}`}
-      </button>
-      {errorMessage && <div style={{ color: 'red' }}>{errorMessage}</div>}
-      {successMessage && <div style={{ color: 'green' }}>{successMessage}</div>}
-    </form>
+    <div className="flex flex-col border-2 gap-4 p-10 w-full">
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertTitle>Heads up!</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      {successMessage && (
+        <Alert variant="default">
+          <AlertTitle>Success!</AlertTitle>
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
+      <b className="text-2xl pb-4">Add Payment Details</b>
+
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col">
+          <p>Total Payable Amount: ${price}</p>
+          <p>You will be credited: {gems} gems</p>
+        </div>
+        <b>Card Details </b>
+        <CardElement />
+        <Button disabled={!stripe || paymentProcessing} onClick={handleSubmit}>
+          {paymentProcessing ? "Processing..." : `Pay Now`}
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -96,4 +125,4 @@ const PaymentWrapper: React.FC = () => (
   </Elements>
 );
 
-export default PaymentWrapper;
+export default withAuth(PaymentWrapper);

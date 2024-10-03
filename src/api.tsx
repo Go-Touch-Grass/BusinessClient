@@ -1,6 +1,6 @@
 import axios from "axios";
-import Cookies from 'js-cookie';
-import { useRouter } from 'next/router';
+import Cookies from "js-cookie";
+import { useRouter } from "next/router";
 
 export const API_URL =
   process.env.NODE_ENV === "production"
@@ -15,25 +15,28 @@ const createInstance = (baseUrl) => {
 
   /// ADDED auto add authorization header and forbidden errors globally.
   // Request Interceptor: Automatically add the Authorization header with the token from cookies
-  instance.interceptors.request.use((config) => {
-    const token = Cookies.get('authToken');  // Retrieve token from cookies
-    console.log("Token being attached:", token); // Debugging - Check if token is present
+  instance.interceptors.request.use(
+    (config) => {
+      const token = Cookies.get("authToken"); // Retrieve token from cookies
+      console.log("Token being attached:", token); // Debugging - Check if token is present
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;  // Add token to Authorization header
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`; // Add token to Authorization header
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
     }
-    return config;
-  }, (error) => {
-    return Promise.reject(error);
-  });
+  );
 
   // Response Interceptor: Handle 401 Unauthorized and 403 Forbidden errors globally
   instance.interceptors.response.use(
     (response) => {
-      return response;  // If the request is successful, return the response
+      return response; // If the request is successful, return the response
     },
     (error) => {
-      //const router = useRouter();  // Use the Next.js router for navigation
+      // //const router = useRouter();  // Use the Next.js router for navigation
 
       /*
       if (error.response && error.response.status === 401) {
@@ -45,12 +48,10 @@ const createInstance = (baseUrl) => {
         alert('You do not have permission to access this resource.');
       }
 */
-      return Promise.reject(error);  // Reject the promise so that individual requests can still handle errors
+      return Promise.reject(error); // Reject the promise so that individual requests can still handle errors
     }
   );
-  //// 
-
-
+  ////
 
   return instance;
 };
