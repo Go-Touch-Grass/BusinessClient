@@ -15,17 +15,17 @@ const CreateAvatar: React.FC = () => {
 	const router = useRouter();
 	const [items, setItems] = useState<Item[]>([]);
 	const [customization, setCustomization] = useState<{
+		[ItemType.BASE]: Item | null;
 		[ItemType.HAT]: Item | null;
 		[ItemType.SHIRT]: Item | null;
 		[ItemType.BOTTOM]: Item | null;
 	}>({
+		[ItemType.BASE]: null,
 		[ItemType.HAT]: null,
 		[ItemType.SHIRT]: null,
 		[ItemType.BOTTOM]: null,
 	});
-	const [selectedCategory, setSelectedCategory] = useState<ItemType | "">(
-		""
-	);
+	const [selectedCategory, setSelectedCategory] = useState<ItemType | "">(ItemType.BASE);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -33,6 +33,18 @@ const CreateAvatar: React.FC = () => {
 	useEffect(() => {
 		fetchItems();
 	}, []);
+
+	useEffect(() => {
+		if (items.length > 0) {
+			const baseItem = items.find(item => item.type === ItemType.BASE && item.id === 1);
+			if (baseItem) {
+				setCustomization(prev => ({
+					...prev,
+					[ItemType.BASE]: baseItem
+				}));
+			}
+		}
+	}, [items]);
 
 	const fetchItems = async () => {
 		try {
@@ -58,6 +70,7 @@ const CreateAvatar: React.FC = () => {
 		try {
 			const response = await createAvatar(
 				AvatarType.BUSINESS,
+				customization[ItemType.BASE]?.id || 1, // Use 1 as default if no base is selected
 				customization[ItemType.HAT]?.id || null,
 				customization[ItemType.SHIRT]?.id || null,
 				customization[ItemType.BOTTOM]?.id || null,
@@ -122,12 +135,14 @@ const CreateAvatar: React.FC = () => {
 
 			<div className="flex flex-col items-center mt-4">
 				<div className="relative">
-					<Image
-						src="/sprites/avatar_base.png"
-						alt="Avatar"
-						width={170}
-						height={170}
-					/>
+					{customization[ItemType.BASE] && (
+						<Image
+							src={customization[ItemType.BASE].filepath}
+							alt={customization[ItemType.BASE].name}
+							width={170}
+							height={170}
+						/>
+					)}
 					{customization[ItemType.HAT] && (
 						<Image
 							src={customization[ItemType.HAT].filepath}
@@ -160,47 +175,26 @@ const CreateAvatar: React.FC = () => {
 
 			<div className="mt-6 flex justify-center space-x-4">
 				<Button
-					onClick={() =>
-						setSelectedCategory(
-							ItemType.HAT
-						)
-					}
-					variant={
-						selectedCategory ===
-						ItemType.HAT
-							? "default"
-							: "outline"
-					}
+					onClick={() => setSelectedCategory(ItemType.BASE)}
+					variant={selectedCategory === ItemType.BASE ? "default" : "outline"}
+				>
+					Base
+				</Button>
+				<Button
+					onClick={() => setSelectedCategory(ItemType.HAT)}
+					variant={selectedCategory === ItemType.HAT ? "default" : "outline"}
 				>
 					Hat
 				</Button>
 				<Button
-					onClick={() =>
-						setSelectedCategory(
-							ItemType.SHIRT
-						)
-					}
-					variant={
-						selectedCategory ===
-						ItemType.SHIRT
-							? "default"
-							: "outline"
-					}
+					onClick={() => setSelectedCategory(ItemType.SHIRT)}
+					variant={selectedCategory === ItemType.SHIRT ? "default" : "outline"}
 				>
 					Upper Wear
 				</Button>
 				<Button
-					onClick={() =>
-						setSelectedCategory(
-							ItemType.BOTTOM
-						)
-					}
-					variant={
-						selectedCategory ===
-						ItemType.BOTTOM
-							? "default"
-							: "outline"
-					}
+					onClick={() => setSelectedCategory(ItemType.BOTTOM)}
+					variant={selectedCategory === ItemType.BOTTOM ? "default" : "outline"}
 				>
 					Lower Wear
 				</Button>
@@ -217,9 +211,7 @@ const CreateAvatar: React.FC = () => {
 					onClick={handleCreateAvatar}
 					disabled={isLoading}
 				>
-					{isLoading
-						? "Creating..."
-						: "Finish Creating Avatar"}
+					{isLoading ? "Creating..." : "Finish Creating Avatar"}
 				</Button>
 			</div>
 
