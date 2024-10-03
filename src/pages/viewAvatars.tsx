@@ -39,7 +39,12 @@ const ViewAvatars: React.FC = () => {
             setAvatars(fetchedAvatars);
         } catch (error) {
             console.error("Error fetching avatars:", error);
-            setError(`Failed to fetch avatars: ${(error as Error).message}`);
+            // Check if the error message indicates no avatars found
+            if ((error as Error).message.includes("No avatars found")) {
+                setAvatars([]); // Set avatars to an empty array
+            } else {
+                setError(`Failed to fetch avatars: ${(error as Error).message}`);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -47,12 +52,14 @@ const ViewAvatars: React.FC = () => {
 
     const renderAvatar = (avatar: Avatar) => (
         <div className="relative w-[170px] h-[170px] cursor-pointer" onClick={() => handleAvatarClick(avatar.id)}>
-            <Image
-                src="/sprites/avatar_base.png"
-                alt="Avatar"
-                width={170}
-                height={170}
-            />
+            {avatar.base && (
+                <Image
+                    src={avatar.base.filepath}
+                    alt={avatar.base.name}
+                    width={170}
+                    height={170}
+                />
+            )}
             {avatar.hat && (
                 <Image
                     src={avatar.hat.filepath}
@@ -128,16 +135,18 @@ const ViewAvatars: React.FC = () => {
             )}
 
             {!isLoading && !error && avatars.length === 0 && (
-                <p className="text-center mb-4">No avatars found.</p>
+                <p className="text-center mb-4">No avatars found. Create your first avatar!</p>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {avatars.map((avatar) => (
-                    <div key={avatar.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center justify-start" style={{ width: '210px', height: '300px' }}>
-                        {renderAvatar(avatar)}
-                    </div>
-                ))}
-            </div>
+            {!isLoading && !error && avatars.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {avatars.map((avatar) => (
+                        <div key={avatar.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center justify-start" style={{ width: '210px', height: '300px' }}>
+                            {renderAvatar(avatar)}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

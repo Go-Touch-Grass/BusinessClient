@@ -2,19 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import {
-    getItems,
+	getItems,
 	getAvatarById,
 	updateAvatar,
 	AvatarType,
 	Item,
 	ItemType,
-    AvatarInfo
+	AvatarInfo,
 } from "../api/avatarApi";
 import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	variant?: 'outline' | 'filled'; // Add more variants if needed
+	variant?: "outline" | "filled"; // Add more variants if needed
 	isLoading?: boolean; // Add isLoading to props
 }
 
@@ -24,29 +24,33 @@ const EditAvatar: React.FC = () => {
 	const [avatar, setAvatar] = useState<AvatarInfo | null>(null);
 	const [items, setItems] = useState<Item[]>([]);
 	const [customization, setCustomization] = useState<{
+		[ItemType.BASE]: Item | null; // Add BASE to customization
 		[ItemType.HAT]: Item | null;
 		[ItemType.SHIRT]: Item | null;
 		[ItemType.BOTTOM]: Item | null;
 	}>({
+		[ItemType.BASE]: null, // Initialize BASE
 		[ItemType.HAT]: null,
 		[ItemType.SHIRT]: null,
 		[ItemType.BOTTOM]: null,
 	});
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<ItemType | "">(
+	const [selectedCategory, setSelectedCategory] = useState<ItemType | "">(
 		""
 	);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+	const [successMessage, setSuccessMessage] = useState<string | null>(
+		null
+	);
 
 	useEffect(() => {
 		if (avatarId) {
 			fetchAvatarDetails(avatarId as string);
-            fetchItems();
+			fetchItems();
 		}
 	}, [avatarId]);
 
-    const fetchItems = async () => {
+	const fetchItems = async () => {
 		try {
 			const fetchedItems = await getItems();
 			setItems(fetchedItems);
@@ -56,18 +60,18 @@ const EditAvatar: React.FC = () => {
 		}
 	};
 
-    const handleSelectItem = (item: Item) => {
+	const handleSelectItem = (item: Item) => {
 		setCustomization((prev) => ({
 			...prev,
 			[item.type]: item,
 		}));
 	};
 
-    const handleBack = () => {
-		router.push('/avatarManagement');
+	const handleBack = () => {
+		router.push("/viewAvatars");
 	};
 
-    const renderWardrobeItems = () => {
+	const renderWardrobeItems = () => {
 		const filteredItems = items.filter(
 			(item) => item.type === selectedCategory
 		);
@@ -77,7 +81,9 @@ const EditAvatar: React.FC = () => {
 				{filteredItems.map((item) => (
 					<div
 						key={item.id}
-						onClick={() => handleSelectItem(item)}
+						onClick={() =>
+							handleSelectItem(item)
+						}
 						className="cursor-pointer"
 					>
 						<Image
@@ -94,75 +100,95 @@ const EditAvatar: React.FC = () => {
 	};
 
 	const fetchAvatarDetails = async (id: string) => {
-        try {
-            const avatarId = Number(id);
-    
-            if (isNaN(avatarId)) {
-                throw new Error("Invalid avatar ID");
-            }
-            
-            const fetchedAvatar = await getAvatarById(avatarId);
-            setAvatar(fetchedAvatar);
-    
-            // Set customization details
-            setCustomization({
-                [ItemType.HAT]: fetchedAvatar.hat || null,
-                [ItemType.SHIRT]: fetchedAvatar.shirt || null,
-                [ItemType.BOTTOM]: fetchedAvatar.bottom || null,
-            });
-        } catch (error) {
-            console.error("Error fetching avatar details:", error);
-            setError("Failed to load avatar details");
-        }
-    };
+		try {
+			const avatarId = Number(id);
+
+			if (isNaN(avatarId)) {
+				throw new Error("Invalid avatar ID");
+			}
+
+			const fetchedAvatar = await getAvatarById(avatarId);
+			setAvatar(fetchedAvatar);
+
+			// Set customization details
+			setCustomization({
+				[ItemType.BASE]: fetchedAvatar.base || null, // Set BASE
+				[ItemType.HAT]: fetchedAvatar.hat || null,
+				[ItemType.SHIRT]: fetchedAvatar.shirt || null,
+				[ItemType.BOTTOM]: fetchedAvatar.bottom || null,
+			});
+		} catch (error) {
+			console.error("Error fetching avatar details:", error);
+			setError("Failed to load avatar details");
+		}
+	};
 
 	const handleSaveChanges = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            // Create the updatedInfo object with the correct type
-            const updatedInfo: {
-                hatId?: number; // Change to number
-                shirtId?: number; // Change to number
-                bottomId?: number; // Change to number
-            } = {
-                hatId: customization[ItemType.HAT]?.id, 
-                shirtId: customization[ItemType.SHIRT]?.id, 
-                bottomId: customization[ItemType.BOTTOM]?.id 
-            };
-    
-            // Ensure avatarId is a number
-            const numericAvatarId = Number(avatarId);
-    
-            // Check if the conversion is valid
-            if (isNaN(numericAvatarId)) {
-                throw new Error("Invalid avatar ID");
-            }
-    
-            // Pass the numeric avatarId to the updateAvatar function
-            await updateAvatar(numericAvatarId, updatedInfo);
-            router.push('/viewAvatars');
-        } catch (error) {
-            console.error("Error updating avatar:", error);
-            setError("Failed to save changes");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+		setIsLoading(true);
+		setError(null);
+		try {
+			const updatedInfo: {
+				baseId?: number; // Add baseId
+				hatId?: number;
+				shirtId?: number;
+				bottomId?: number;
+			} = {
+				baseId: customization[ItemType.BASE]?.id, // Include baseId
+				hatId: customization[ItemType.HAT]?.id,
+				shirtId: customization[ItemType.SHIRT]?.id,
+				bottomId: customization[ItemType.BOTTOM]?.id,
+			};
+
+			// Ensure avatarId is a number
+			const numericAvatarId = Number(avatarId);
+
+			// Check if the conversion is valid
+			if (isNaN(numericAvatarId)) {
+				throw new Error("Invalid avatar ID");
+			}
+
+			// Pass the numeric avatarId to the updateAvatar function
+			await updateAvatar(numericAvatarId, updatedInfo);
+			router.push("/viewAvatars");
+		} catch (error) {
+			console.error("Error updating avatar:", error);
+			setError("Failed to save changes");
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const renderAvatarPreview = () => {
 		return (
 			<div className="relative">
-				<Image
-					src="/sprites/avatar_base.png"
-					alt="Avatar"
-					width={170}
-					height={170}
-				/>
+				{customization[ItemType.BASE] && (
+					<Image
+						src={
+							customization[
+								ItemType.BASE
+							].filepath
+						}
+						alt={
+							customization[
+								ItemType.BASE
+							].name
+						}
+						width={170}
+						height={170}
+					/>
+				)}
 				{customization[ItemType.HAT] && (
 					<Image
-						src={customization[ItemType.HAT].filepath}
-						alt={customization[ItemType.HAT].name}
+						src={
+							customization[
+								ItemType.HAT
+							].filepath
+						}
+						alt={
+							customization[
+								ItemType.HAT
+							].name
+						}
 						width={90}
 						height={90}
 						className="absolute top-[-5px] left-[38px]"
@@ -170,8 +196,16 @@ const EditAvatar: React.FC = () => {
 				)}
 				{customization[ItemType.BOTTOM] && (
 					<Image
-						src={customization[ItemType.BOTTOM].filepath}
-						alt={customization[ItemType.BOTTOM].name}
+						src={
+							customization[
+								ItemType.BOTTOM
+							].filepath
+						}
+						alt={
+							customization[
+								ItemType.BOTTOM
+							].name
+						}
 						width={160}
 						height={100}
 						className="absolute top-[115px] left-[5px]"
@@ -179,8 +213,16 @@ const EditAvatar: React.FC = () => {
 				)}
 				{customization[ItemType.SHIRT] && (
 					<Image
-						src={customization[ItemType.SHIRT].filepath}
-						alt={customization[ItemType.SHIRT].name}
+						src={
+							customization[
+								ItemType.SHIRT
+							].filepath
+						}
+						alt={
+							customization[
+								ItemType.SHIRT
+							].name
+						}
 						width={105}
 						height={91}
 						className="absolute top-[76px] left-[32px]"
@@ -192,15 +234,17 @@ const EditAvatar: React.FC = () => {
 
 	return (
 		<div className="container mx-auto p-6">
-            <Button onClick={handleBack} variant="outline">
-					Back
+			<Button onClick={handleBack} variant="outline">
+				Back
 			</Button>
-			 <h1 className="text-4xl font-bold text-zinc-700 text-center">
-                Edit Avatar
-            </h1>
+			<h1 className="text-4xl font-bold text-zinc-700 text-center">
+				Edit Avatar
+			</h1>
 
 			{error && (
-				<p className="text-red-500 text-center mb-4">{error}</p>
+				<p className="text-red-500 text-center mb-4">
+					{error}
+				</p>
 			)}
 
 			<div className="flex justify-center">
@@ -208,7 +252,22 @@ const EditAvatar: React.FC = () => {
 			</div>
 
 			{/* Wardrobe */}
-            <div className="mt-6 flex justify-center space-x-4">
+			<div className="mt-6 flex justify-center space-x-4">
+				<Button
+					onClick={() =>
+						setSelectedCategory(
+							ItemType.BASE
+						)
+					}
+					variant={
+						selectedCategory ===
+						ItemType.BASE
+							? "default"
+							: "outline"
+					}
+				>
+					Base
+				</Button>
 				<Button
 					onClick={() =>
 						setSelectedCategory(
@@ -263,13 +322,17 @@ const EditAvatar: React.FC = () => {
 			</div>
 
 			<div className="flex justify-center mt-6">
-				<Button onClick={handleSaveChanges} variant="outline" disabled={isLoading}>
-                {isLoading
-						? "Creating..."
-						: "Saved Avatar"}
+				<Button
+					onClick={handleSaveChanges}
+					variant="outline"
+					disabled={isLoading}
+				>
+					{isLoading
+						? "Saving..."
+						: "Save Avatar"}
 				</Button>
 			</div>
-            {error && (
+			{error && (
 				<p className="text-red-500 text-center mt-4">
 					{error}
 				</p>
