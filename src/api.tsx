@@ -35,15 +35,16 @@ const createInstance = (baseUrl) => {
     (error) => {
       //const router = useRouter();  // Use the Next.js router for navigation
 
+      /*
       if (error.response && error.response.status === 401) {
         // Handle 401 Unauthorized: Redirect to login and clear the token
         Cookies.remove('authToken');
-        window.location.href = '/login'; // Redirect using window.location
+        window.location.href = '/Login'; // Redirect using window.location
       } else if (error.response && error.response.status === 403) {
         // Handle 403 Forbidden: Display an error message or redirect
         alert('You do not have permission to access this resource.');
       }
-
+*/
       return Promise.reject(error);  // Reject the promise so that individual requests can still handle errors
     }
   );
