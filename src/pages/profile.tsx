@@ -25,7 +25,7 @@ interface Outlet {
 }
 
 interface BusinessRegistration {
-
+    registration_id: number;
     entityName: string;
     location: string;
     category: string;
@@ -377,7 +377,17 @@ const ProfilePage: React.FC = () => {
                             <p>No business registration found.</p>
                         ) : (
                             <div key={businessRegistration.entityName} className='border p-4 rounded-lg'>
-                                <h3 className='text-xl font-semibold'>{businessRegistration.entityName}</h3>
+
+                                <div className='flex justify-between items-center mb-10'>
+                                    <h3 className='text-xl font-semibold'>{businessRegistration.entityName}</h3>
+                                    {/* Edit Outlet Button */}
+                                    <Button
+                                        onClick={() => router.push(`/editRegisterBusiness?registrationId=${businessRegistration.registration_id}`)}
+                                        className='bg-green-500 hover:bg-green-600 text-white'
+                                    >
+                                        Edit
+                                    </Button>
+                                </div>
                                 <p><strong>Location:</strong> {businessRegistration.location}</p>
                                 <p><strong>Category:</strong> {businessRegistration.category}</p>
                                 <p><strong>Status:</strong> {businessRegistration.status}</p>
@@ -442,7 +452,17 @@ const ProfilePage: React.FC = () => {
                         ) : (
                             outlets.map(outlet => (
                                 <div key={outlet.outlet_name} className='border p-4 rounded-lg'>
-                                    <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
+
+                                    <div className='flex justify-between items-center mb-10'>
+                                        <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
+                                        {/* Edit Outlet Button */}
+                                        <Button
+                                            onClick={() => router.push(`/editOutlet?outletId=${outlet.outlet_id}`)}
+                                            className='bg-green-500 hover:bg-green-600 text-white'
+                                        >
+                                            Edit Outlet
+                                        </Button>
+                                    </div>
                                     <p><strong>Location:</strong> {outlet.location}</p>
                                     <p><strong>Contact:</strong> {outlet.contact}</p>
                                     <p><strong>Description:</strong> {outlet.description}</p>
@@ -450,7 +470,7 @@ const ProfilePage: React.FC = () => {
                                         <Button onClick={() => handleDeleteOutlet(outlet)} className='bg-red-500 hover:bg-red-600'>Delete Outlet</Button>
                                     </div>
 
-                                    <div className='mt-4 flex justify-end'>
+                                    <div className=' flex justify-end mt-4'>
                                         <Button
                                             className='bg-blue-500 hover:bg-blue-600 text-white'
                                             onClick={() => router.push(`/outletSubscriptionPage?outlet=${outlet.outlet_id}`)}
