@@ -62,21 +62,59 @@ const ViewSubscriptions = () => {
     fetchSubscriptions();
   }, []);
 
+
+  const enableAutoRenew = async (subscription: Subscription) => {
+    try {
+      const token = Cookies.get('authToken');
+      if (!token) {
+        setRenewError('No username found in cookies');
+        return;
+      }
+      const subscriptionId = subscription.subscription_id;
+      const shouldAutoRenew = true;
+
+
+      const response = await api.put(`/api/business/update_subscription`, {
+
+        subscription_id: subscriptionId,
+        autoRenew: shouldAutoRenew,
+      });
+
+      if (response.status === 200) {
+        alert('Auto Renew enabled successfully!');
+
+        setSubscriptions((prev) =>
+          prev.map((sub) =>
+            sub.subscription_id === subscriptionId ? { ...sub, autoRenew: shouldAutoRenew } : sub
+          )
+        );
+      } else {
+        setRenewError('Failed to enable Auto Renew');
+      }
+    } catch (err) {
+      console.error('Auto Renew error:', err);
+      setRenewError('Error enabling Auto Renew');
+    }
+  };
+
+
+
+
   const calculateTimeLeft = (expirationDate: Date) => {
     const currentDate = new Date();
     const diff = expirationDate.getTime() - currentDate.getTime();
 
-    // Log the dates for debugging
+
     console.log('Current Date:', currentDate);
     console.log('Expiration Date:', expirationDate);
     console.log('Time Difference (ms):', diff);
 
-    // Check if the expiration date is in the past
+
     if (diff < 0) {
-      return 'Expired'; // Or any other message you want to display
+      return 'Expired';
     }
 
-    // Convert time difference to days, hours, minutes
+
     const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hoursLeft = Math.floor((diff / (1000 * 60 * 60)) % 24);
     const minutesLeft = Math.floor((diff / (1000 * 60)) % 60);
@@ -93,7 +131,7 @@ const ViewSubscriptions = () => {
 
   const isSubscriptionActive = (expirationDate: Date) => {
     const currentDate = new Date();
-    return currentDate < expirationDate; // Returns true if subscription is active
+    return currentDate < expirationDate;
   };
 
   const renewSubscription = async (subscription: Subscription) => {
@@ -254,7 +292,18 @@ const ViewSubscriptions = () => {
                   >
                     Edit Subscription
                   </button>
+
+                  {/* Button for auto-renewal */}
+                  <button
+                    onClick={() => enableAutoRenew(subscription)}
+                    className="p-2 rounded bg-yellow-700 text-black hover:bg-yellow-800"
+                  >
+                    Enable Auto Renew
+                  </button>
+
                 </div>
+
+
               </div>
             ))}
           </div>
