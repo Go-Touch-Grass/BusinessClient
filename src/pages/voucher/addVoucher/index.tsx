@@ -13,6 +13,7 @@ const CreateVoucherPage = () => {
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState<number>(0);
     const [discount, setDiscount] = useState<number>(0);
+    const [duration, setDuration] = useState<number>(0); // State for duration input
     const [registeredBusiness, setRegisteredBusiness] = useState<RegisteredBusiness | null>(null);
     const [outlets, setOutlets] = useState<Outlet[]>([]);
     const [selectedOutlet, setSelectedOutlet] = useState<string | null>(null); // Outlet selection (optional)
@@ -79,6 +80,7 @@ const CreateVoucherPage = () => {
                 description,
                 price,
                 discount,
+                duration, // Include duration in the request data
                 business_id: registeredBusiness.registration_id, // Optional, for headquarters
                 outlet_id: selectedOutlet || null, // Optional, for specific outlet
             };
@@ -142,6 +144,19 @@ const CreateVoucherPage = () => {
                     value={discount}
                     onChange={(e) => setDiscount(parseFloat(e.target.value))}
                     placeholder="Enter discount amount"
+                />
+            </div>
+
+            {/* New field for voucher duration */}
+            <div>
+                <Label>Duration (in days):</Label>
+                <Input
+                    type="number"
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+
+                    placeholder="Enter duration in days"
+                    required
                 />
             </div>
 
