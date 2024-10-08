@@ -35,7 +35,6 @@ const PaymentPage: React.FC = () => {
   }, [router.query]);
 
   const handleSubmit = async (event: React.FormEvent) => {
-    //event.preventDefault();
     setPaymentProcessing(true);
 
     if (!gems || !price) {
@@ -44,48 +43,64 @@ const PaymentPage: React.FC = () => {
       return;
     }
 
-    // Call your backend API to create a PaymentIntent and get the clientSecret
-    const { clientSecret } = await api
-      .post("/api/payment/create-payment-intent", {
-        amount: price * 100, // in cents
-        currency: "sgd",
-      })
-      .then((response) => response.data)
-      .catch((error) => {
+    try {
+      // Call your backend API to create a PaymentIntent and get the clientSecret
+      const { clientSecret, paymentIntentId } = await api
+        .post("/api/payment/create-payment-intent", {
+          amount: price * 100, // in cents
+          currency: "sgd",
+        })
+        .then((response) => response.data);
+
+      if (!clientSecret || !paymentIntentId) {
         setErrorMessage("Error creating payment intent");
         setPaymentProcessing(false);
-        return { clientSecret: null };
-      });
+        return;
+      }
 
-    if (!clientSecret) return;
+      const cardElement = elements?.getElement(CardElement);
+      if (!cardElement) {
+        setErrorMessage("Card information not found.");
+        setPaymentProcessing(false);
+        return;
+      }
 
-    const cardElement = elements?.getElement(CardElement);
-    if (!cardElement) {
-      setErrorMessage("Card information not found.");
-      return;
+      // Confirm the payment using the clientSecret
+      const { error, paymentIntent } =
+        (await stripe?.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+          },
+        })) || {};
+
+      if (error) {
+        setErrorMessage(error.message || "Payment failed");
+        setPaymentProcessing(false);
+        return;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        // Call backend to verify the top-up based on paymentIntentId
+        const verificationResponse = await api
+          .post("/api/business/verify_topup", {
+            paymentIntentId,
+            gemsAdded: gems,
+          })
+          .then((response) => response.data);
+
+        if (verificationResponse.success) {
+          setSuccessMessage("Payment and top-up succeeded!");
+        } else {
+          setErrorMessage("Top-up verification failed.");
+        }
+      } else {
+        setErrorMessage("Payment did not succeed.");
+      }
+    } catch (error) {
+      setErrorMessage("An error occurred during payment processing.");
+    } finally {
+      setPaymentProcessing(false);
     }
-
-    // Confirm the payment using the clientSecret
-    const { error, paymentIntent } =
-      (await stripe?.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        },
-      })) || {};
-
-    if (error) {
-      setErrorMessage(error.message || "Payment failed");
-    } else if (paymentIntent?.status === "succeeded") {
-      setSuccessMessage("Payment succeeded!");
-
-      // Call your backend API to update the gem balance after successful payment
-      await api.post("/api/business/top_up_gems", {
-        currency_cents: price, // Amount paid in cents
-        gems_added: gems, // Add gems to the business account
-      });
-    }
-
-    setPaymentProcessing(false);
   };
 
   return (
