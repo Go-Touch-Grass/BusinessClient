@@ -299,7 +299,7 @@ const ProfilePage: React.FC = () => {
                         </p>
                     </div>
                 </div>
-                <input type="file" accept=".jpg, .png" onChange={handleImageChange} />
+                <input type="file" accept=".jpeg, .jpg, .png" onChange={handleImageChange} />
             </header>
 
             <div className='space-y-6'>

@@ -29,6 +29,8 @@ const EditVoucher = () => {
     const [price, setPrice] = useState<number>(0);
     const [discount, setDiscount] = useState<number>(0);
     const [voucherImage, setVoucherImage] = useState('');
+    const [imageFile, setImageFile] = useState<File | null>(null); // Image file state
+
 
     // Fetch the specific voucher details based on the listing_id
     useEffect(() => {
@@ -58,19 +60,36 @@ const EditVoucher = () => {
         }
     }, [listing_id]);
 
+    // Handle image file change
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageFile(file); // Store the selected image file
+            setVoucherImage(URL.createObjectURL(file)); // Preview the image
+        }
+    };
+
+
     // Handle form submission to update the voucher
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const updatedVoucher = {
-                name,
-                description,
-                price,
-                discount,
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('description', description);
+            formData.append('price', price.toString());
+            formData.append('discount', discount.toString());
 
-            };
+            if (imageFile) {
+                formData.append('voucherImage', imageFile); // Append the selected image file
+            }
 
-            const response = await api.put(`/api/business/vouchers/${listing_id}`, updatedVoucher);
+            const response = await api.put(`/api/business/vouchers/${listing_id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data', // header for fileupload
+                },
+            });
+
             if (response.status === 200) {
                 router.push('/voucher'); // Redirect to voucher list page after successful edit
             } else {
@@ -138,7 +157,16 @@ const EditVoucher = () => {
                         />
                     </div>
 
+                    <div className="mb-4">
+                        <Label htmlFor="voucherImage">Voucher Image</Label>
+                        <Input
+                            id="voucherImage"
+                            type="file"
+                            accept=".jpeg, .jpg, .png"
+                            onChange={handleImageChange}
+                        />
 
+                    </div>
 
                     <div className="flex justify-end">
                         <Button

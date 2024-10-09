@@ -19,6 +19,7 @@ const CreateVoucherPage = () => {
     const [selectedOutlet, setSelectedOutlet] = useState<string | null>(null); // Outlet selection (optional)
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null); // State for image file
 
     interface RegisteredBusiness {
         registration_id: number;
@@ -64,6 +65,14 @@ const CreateVoucherPage = () => {
         fetchData();
     }, []);
 
+    // Handle image selection
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageFile(file); // Store the selected image file
+        }
+    };
+
     // Handle voucher submission
     const handleSubmit = async () => {
         setError(null);
@@ -75,17 +84,30 @@ const CreateVoucherPage = () => {
                 return;
             }
 
-            const data = {
-                name,
-                description,
-                price,
-                discount,
-                duration, // Include duration in the request data
-                business_id: registeredBusiness.registration_id, // Optional, for headquarters
-                outlet_id: selectedOutlet || null, // Optional, for specific outlet
-            };
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('description', description);
+            formData.append('price', price.toString());
+            formData.append('discount', discount.toString());
+            formData.append('business_id', registeredBusiness.registration_id.toString());
+            if (selectedOutlet) {
+                formData.append('outlet_id', selectedOutlet);
+            }
+            if (imageFile) {
+                formData.append('voucherImage', imageFile); // Append the selected image file
+            }
 
-            const response = await api.post('/api/business/create_voucher', data);
+            const token = Cookies.get('authToken');
+            if (!token) {
+                setError('No token found. Please log in.');
+                return;
+            }
+
+            const response = await api.post('/api/business/create_voucher', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data', // Required for file uploads
+                },
+            });
 
             if (response.status === 201) {
                 setSuccess('Voucher created successfully');
@@ -158,27 +180,30 @@ const CreateVoucherPage = () => {
                     placeholder="Enter duration in days"
                     required
                 />
-            </div>
-
-            {/* Conditionally render outlet selection if there are outlets */}
-            {outlets.length > 0 && (
                 <div>
-                    <Label>Select Outlet (Listing would be added to Main Branch if not chosen):</Label>
-                    <br />
-                    <select value={selectedOutlet || ''} onChange={(e) => setSelectedOutlet(e.target.value)}>
-                        <option value="">-- Select an Outlet --</option>
-                        {outlets.map((outlet) => (
-                            <option key={outlet.outlet_id} value={outlet.outlet_id}>
-                                {outlet.outlet_name}
-                            </option>
-                        ))}
-                    </select>
+                    <Label>Voucher Image:</Label>
+                    <Input type="file" accept=".jpeg, .jpg, .png" onChange={handleImageChange} /> {/* Image upload input */}
                 </div>
-            )}
-            <br /><br /><br /><br />
-            <Button onClick={handleSubmit}>Create Voucher</Button>
-        </div>
-    );
+
+                {/* Conditionally render outlet selection if there are outlets */}
+                {outlets.length > 0 && (
+                    <div>
+                        <Label>Select Outlet (Listing would be added to Main Branch if not chosen):</Label>
+                        <br />
+                        <select value={selectedOutlet || ''} onChange={(e) => setSelectedOutlet(e.target.value)}>
+                            <option value="">-- Select an Outlet --</option>
+                            {outlets.map((outlet) => (
+                                <option key={outlet.outlet_id} value={outlet.outlet_id}>
+                                    {outlet.outlet_name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+                <br /><br /><br /><br />
+                <Button onClick={handleSubmit}>Create Voucher</Button>
+            </div>
+            );
 };
 
-export default withAuth(CreateVoucherPage);
+            export default withAuth(CreateVoucherPage);
