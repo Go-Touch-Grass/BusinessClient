@@ -16,6 +16,8 @@ interface BusinessAccount {
   email: string;
   username: string;
   gem_balance: number;
+  banStatus: boolean;
+  banRemarks: string;
 }
 
 interface Outlet {
@@ -55,6 +57,8 @@ const ProfilePage: React.FC = () => {
     email: "",
     username: "",
     gem_balance: 0,
+    banStatus: false,
+    banRemarks: ""
   });
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null); // Store the selected outlet for deletion
   const [isOutletModalVisible, setIsOutletModalVisible] =
@@ -372,7 +376,12 @@ const ProfilePage: React.FC = () => {
 
 
 
-
+<div className={`flex flex-col relative ${profile?.banStatus && "cursor-not-allowed"}`}>
+  {profile?.banStatus && <div className="absolute bg-gray-400 w-full h-full font-bold opacity-90 p-10 flex flex-col justify-center items-center">
+    <div>Your account has been locked by our admin due to the following reason(s):</div>
+    <div>{profile.banRemarks}</div>
+    <div>Please resolve the above issues to proceed further.</div>
+    </div> }
                 <div className='space-y-6'>
                     <div className='flex justify-between items-center'>
                         <h2 className='text-lg font-semibold'>Business Registration</h2>
@@ -382,7 +391,7 @@ const ProfilePage: React.FC = () => {
                                 : 'bg-green-500 hover:bg-green-600'
                                 } text-white`}
                             onClick={() => router.push('/registerBusiness')}
-                            disabled={businessRegistration?.status == 'pending' || businessRegistration?.status == 'approved'}  // Disable 
+                            disabled={businessRegistration?.status == 'pending' || businessRegistration?.status == 'approved' || profile?.banStatus == true}  // Disable 
                         >
                             + Register New Business
                         </Button>
@@ -399,6 +408,7 @@ const ProfilePage: React.FC = () => {
                                     <Button
                                         onClick={() => router.push(`/editRegisterBusiness?registrationId=${businessRegistration.registration_id}`)}
                                         className='bg-green-500 hover:bg-green-600 text-white'
+                                        disabled={profile?.banStatus == true}
                                     >
                                         Edit
                                     </Button>
@@ -418,7 +428,7 @@ const ProfilePage: React.FC = () => {
                   <Button
                     className="bg-blue-500 hover:bg-blue-600 text-white"
                     onClick={() => router.push("/subscriptionPage")}
-                    disabled={businessRegistration?.status === "pending"}
+                    disabled={businessRegistration?.status === "pending" ||profile?.banStatus == true}
                   >
                     Create Subscription Plan
                   </Button>
@@ -496,7 +506,7 @@ const ProfilePage: React.FC = () => {
                         )}
                     </div>
                 </div>
-
+                </div>
         <div className="space-y-6">
           <b>Past Transactions</b>
           <p>Current Gem Balance: {formData.gem_balance}</p>
