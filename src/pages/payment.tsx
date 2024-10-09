@@ -65,11 +65,19 @@ const PaymentPage: React.FC = () => {
         return;
       }
 
+      const { email, username } = await api
+        .get("/api/payment/get-user-email-and-username")
+        .then((response) => response.data);
+
       // Confirm the payment using the clientSecret
       const { error, paymentIntent } =
         (await stripe?.confirmCardPayment(clientSecret, {
           payment_method: {
             card: cardElement,
+            billing_details: {
+              email: email,
+              name: username,
+            }
           },
         })) || {};
 
@@ -80,6 +88,12 @@ const PaymentPage: React.FC = () => {
       }
 
       if (paymentIntent?.status === "succeeded") {
+        // Save the paymentIntentId to the database
+        const savedPaymentMethodId = paymentIntent.payment_method;
+        await api.post("/api/payment/save-payment-method-id", {
+          paymentMethodId: savedPaymentMethodId,
+        });
+
         // Call backend to verify the top-up based on paymentIntentId
         const verificationResponse = await api
           .post("/api/business/verify_topup", {
