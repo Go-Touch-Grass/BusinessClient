@@ -203,7 +203,8 @@ const CreateVoucherPage = () => {
                 <br /><br /><br /><br />
                 <Button onClick={handleSubmit}>Create Voucher</Button>
             </div>
-            );
+        </div>
+    );
 };
 
-            export default withAuth(CreateVoucherPage);
+export default withAuth(CreateVoucherPage);
