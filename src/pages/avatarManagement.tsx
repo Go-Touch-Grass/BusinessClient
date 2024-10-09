@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
-import { getBusinessAvatars } from "../api/avatarApi";
+import { AvatarInfo, getAvatarByBusinessRegistrationId, getAvatarByOutletId  } from "../api/avatarApi";
 import Cookies from 'js-cookie';
 
 const AvatarManagement: React.FC = () => {
@@ -10,13 +10,29 @@ const AvatarManagement: React.FC = () => {
 	const [hasAvatars, setHasAvatars] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 
+	/*
 	useEffect(() => {
 		const checkAvatars = async () => {
-			const username = Cookies.get('username');
-			if (username) {
+			const registration_id = Cookies.get('registration_id');
+			const outlet_id = Cookies.get('outlet_id');
+	
+			const regId = registration_id ? parseInt(registration_id, 10) : undefined;
+			const outId = outlet_id ? parseInt(outlet_id, 10) : undefined;
+	
+			if (regId || outId) {
 				try {
-					const avatars = await getBusinessAvatars(username);
-					setHasAvatars(avatars.length > 0);
+					let avatar: AvatarInfo | null = null;
+	
+					if (regId) {
+						avatar = await getAvatarByBusinessRegistrationId(regId);
+					}
+					
+					if (!avatar && outId) {
+						avatar = await getAvatarByBusinessOutletId(outId);
+					}
+	
+					// If either avatar exists for the business registration or outlet, setHasAvatars to true
+					setHasAvatars(avatar !== null);
 				} catch (error) {
 					console.error("Error checking avatars:", error);
 					setHasAvatars(false);
@@ -27,9 +43,11 @@ const AvatarManagement: React.FC = () => {
 				setIsLoading(false);
 			}
 		};
-
+	
 		checkAvatars();
 	}, []);
+	*/
+	
 
 	const handleCreateAvatar = () => {
 		router.push('/createAvatar');
@@ -60,8 +78,8 @@ const AvatarManagement: React.FC = () => {
 					</Button>
 					<Button 
 						onClick={handleViewAvatars} 
-						disabled={isLoading || !hasAvatars}
-						title={!hasAvatars ? "No avatars available" : ""}
+						//disabled={isLoading || !hasAvatars}
+						//title={!hasAvatars ? "No avatars available" : ""}
 					>
 						View Avatars
 					</Button>
