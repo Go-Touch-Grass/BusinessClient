@@ -4,11 +4,38 @@ import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
 import { AvatarInfo, getAvatarByBusinessRegistrationId, getAvatarByOutletId  } from "../api/avatarApi";
 import Cookies from 'js-cookie';
+import { BusinessAccount } from "./profile";
+import api from "@/api";
 
 const AvatarManagement: React.FC = () => {
 	const router = useRouter();
 	const [hasAvatars, setHasAvatars] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
+	const [profile, setProfile] = useState<BusinessAccount>()
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+          try {
+            const token = Cookies.get("authToken");
+            if (!token) {
+              console.error("No token found. Please log in.");
+              return;
+            }
+            const response = await api.get(`/api/business/profile`);
+            if (response.status === 200) {
+              setProfile(response.data.business);
+  
+            } else {
+				console.error(response.data.message || "Failed to fetch profile");
+            }
+          } catch (err) {
+            console.error("An error occurred while fetching profile");
+            console.error("API call error:", err);
+          }
+        };
+    
+        fetchProfile();
+      }, []);
 
 	/*
 	useEffect(() => {
@@ -70,7 +97,12 @@ const AvatarManagement: React.FC = () => {
 			<h1 className="text-4xl font-bold text-zinc-700 text-center mb-6">
 				Avatar Management
 			</h1>
-
+			<div className={`flex flex-col relative ${profile?.banStatus && "cursor-not-allowed"}`}>
+			{profile?.banStatus && <div className="absolute bg-gray-400 w-full h-full font-bold opacity-90 p-10 flex flex-col justify-center items-center">
+    <div>Your account has been locked by our admin due to the following reason(s):</div>
+    <div>{profile.banRemarks}</div>
+    <div>Please resolve the above issues to proceed further.</div>
+    </div> }
 			<div className="flex flex-col items-center space-y-4">
 				<div className="flex justify-center space-x-4">
 					<Button onClick={handleCreateAvatar}>
@@ -92,6 +124,7 @@ const AvatarManagement: React.FC = () => {
 						Custom Item
 					</Button>
 				</div>
+			</div>
 			</div>
 		</div>
 	);

@@ -10,7 +10,7 @@ import { useAuth } from "./AuthContext";
 import ConfirmationModal from "../components/Profile/confirmationModal";
 import { DataTable } from "@/components/components/global/DataTable";
 
-interface BusinessAccount {
+export interface BusinessAccount {
   firstName: string;
   lastName: string;
   email: string;
