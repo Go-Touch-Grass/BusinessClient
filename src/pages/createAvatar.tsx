@@ -10,6 +10,26 @@ import {
 } from "../api/avatarApi";
 import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
+import Cookies from 'js-cookie';
+import api from '@/api';
+
+interface Outlet {
+    outlet_name: string;
+    location: string;
+    contact: string;
+    description: string;
+    outlet_id: number;
+}
+
+interface BusinessRegistration {
+    registration_id: number;
+    entityName: string;
+    location: string;
+    category: string;
+    status: string;
+    remarks: string;
+    proof?: string;
+}
 
 const CreateAvatar: React.FC = () => {
 	const router = useRouter();
@@ -30,8 +50,14 @@ const CreateAvatar: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+	// Used to assign avatar to a certain outlet or registered business location
+	const [outlets, setOutlets] = useState<Outlet[]>([]);
+    const [businessRegistration, setBusinessRegistration] = useState<BusinessRegistration | null>(null);
+    const [selectedOutlet, setSelectedOutlet] = useState<number | null>(null);
+
 	useEffect(() => {
 		fetchItems();
+		fetchProfile();
 	}, []);
 
 	useEffect(() => {
@@ -56,6 +82,27 @@ const CreateAvatar: React.FC = () => {
 		}
 	};
 
+	const fetchProfile = async () => {
+        try {
+            const token = Cookies.get('authToken');
+            if (!token) {
+                setError('No token found. Please log in.');
+                return;
+            }
+
+            const response = await api.get(`/api/business/profile`);
+            if (response.status === 200) {
+                setOutlets(response.data.outlets);
+                setBusinessRegistration(response.data.registeredBusiness);
+            } else {
+                setError(response.data.message || 'Failed to fetch profile');
+            }
+        } catch (err) {
+            setError('An error occurred while fetching profile');
+            console.error('API call error:', err);
+        }
+    };
+
 	const handleSelectItem = (item: Item) => {
 		setCustomization((prev) => ({
 			...prev,
@@ -68,18 +115,33 @@ const CreateAvatar: React.FC = () => {
 		setError(null);
 		setSuccessMessage(null);
 		try {
+			// Determine the avatar type based on selected outlet
+			let avatarType: AvatarType;
+			let outletId: number | null = null;
+			if (selectedOutlet) {
+				avatarType = AvatarType.OUTLET;
+				outletId = selectedOutlet; 
+				
+			} else if (businessRegistration) {
+				avatarType = AvatarType.BUSINESS_REGISTER_BUSINESS;
+			} else {
+				console.error("No outlet or business registration selected");
+				return;
+			}
+	
 			const response = await createAvatar(
-				AvatarType.BUSINESS,
-				customization[ItemType.BASE]?.id || 1, // Use 1 as default if no base is selected
+				avatarType,
+				customization[ItemType.BASE]?.id || 1,
 				customization[ItemType.HAT]?.id || null,
 				customization[ItemType.SHIRT]?.id || null,
 				customization[ItemType.BOTTOM]?.id || null,
+				outletId
 			);
-			
+
 			setSuccessMessage('Avatar created successfully!');
 			console.log('Created avatar:', response.avatar);
 			console.log('Avatar ID:', response.avatarId);
-
+	
 			setTimeout(() => {
 				router.push('/viewAvatars');
 			}, 2000);
@@ -90,9 +152,14 @@ const CreateAvatar: React.FC = () => {
 			setIsLoading(false);
 		}
 	};
-
+	
 	const handleBack = () => {
 		router.push('/avatarManagement');
+	};
+
+	const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+		const selectedId = event.target.value ? parseInt(event.target.value) : null;
+		setSelectedOutlet(selectedId);
 	};
 
 	const renderWardrobeItems = () => {
@@ -132,6 +199,29 @@ const CreateAvatar: React.FC = () => {
 				</h1>
 				<div className="w-[100px]"></div> {/* Spacer for alignment */}
 			</div>
+
+			 {/* Dropdown to select outlet or business registration */}
+			 <div className="mb-6">
+                <label htmlFor="entitySelect" className="block mb-2 font-semibold">Select Business/Outlet:</label>
+                <select
+					id="entitySelect"
+					value={selectedOutlet !== null ? selectedOutlet.toString() : ""}
+					onChange={handleSelectChange}
+					className="border rounded p-2 w-full"
+				>
+					{businessRegistration && (
+						<option value="">
+							{businessRegistration.entityName} (Business Registration)
+						</option>
+					)}
+					{outlets.map((outlet) => (
+						<option key={outlet.outlet_id} value={outlet.outlet_id.toString()}> {/* Convert to string */}
+							{outlet.outlet_name} (Outlet)
+						</option>
+					))}
+				</select>
+            </div>
+
 
 			<div className="flex flex-col items-center mt-4">
 				<div className="relative">
