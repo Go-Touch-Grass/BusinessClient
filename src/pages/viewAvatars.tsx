@@ -22,6 +22,7 @@ interface BusinessRegistration {
     category: string;
     status: string;
     remarks: string;
+    proof?: string;
 }
 
 const ViewAvatars: React.FC = () => {
@@ -58,21 +59,13 @@ const ViewAvatars: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        if (businessRegistration) {
-            fetchAvatarsByBusinessRegistrationId(businessRegistration.registration_id);
-        } else if (selectedOutlet) {
-            fetchAvatarsByOutletId(selectedOutlet);
-        }
-    }, [businessRegistration, selectedOutlet]);
-
     const fetchAvatarsByBusinessRegistrationId = async (registrationId: number) => {
         console.log("Fetching avatars for Business Registration ID:", registrationId);
         setIsLoading(true);
         setError(null);
         try {
             const avatar = await getAvatarByBusinessRegistrationId(registrationId);
-            console.log("Avatar fetched successfully:", avatar);
+            
             setAvatar(avatar);
         } catch (error) {
             console.error("Error fetching avatars by business registration:", error);
@@ -112,13 +105,15 @@ const ViewAvatars: React.FC = () => {
     const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedValue = event.target.value;
 
-        // Reset outlet selection initially
-        setSelectedOutlet(null);
+        // Clear previous avatar and error when selecting a new entity
+        setAvatar(undefined);
+        setError(null);
 
         // Check if a business registration is selected
         if (selectedValue.includes("Business")) {
             // Fetch avatars for the registered business
             if (businessRegistration) {
+                setSelectedOutlet(null); // Clear outlet selection
                 fetchAvatarsByBusinessRegistrationId(businessRegistration.registration_id);
             }
         } 
@@ -126,7 +121,7 @@ const ViewAvatars: React.FC = () => {
         else if (selectedValue.includes("Outlet")) {
             const outletId = parseInt(selectedValue.split(" ")[0]); // Get the outlet ID
             setSelectedOutlet(outletId);
-            fetchAvatarsByOutletId(outletId); // Fetch avatars for the selected outlet
+            fetchAvatarsByOutletId(outletId);
         }
     };
 
@@ -232,20 +227,16 @@ const ViewAvatars: React.FC = () => {
                 </div>
             )}
 
-            {!isLoading && !error && (
-                <p className="text-center mb-4">No avatars found. Create your first avatar!</p>
+            {!isLoading && !error && avatar && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div key={avatar.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center justify-start" style={{ width: '210px', height: '300px' }}>
+                        {renderAvatar(avatar)}
+                    </div>
+                </div>
             )}
 
-            {!isLoading && !error && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {avatar ? (
-                        <div key={avatar.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center justify-start" style={{ width: '210px', height: '300px' }}>
-                            {renderAvatar(avatar)}
-                        </div>
-                    ) : (
-                        <p className="text-center mb-4">No avatar found.</p> // This provides feedback if no avatar is available
-                    )}
-                </div>
+            {!isLoading && !error && !avatar && (
+                <p className="text-center mb-4">No avatar found.</p>
             )}
         </div>
     );

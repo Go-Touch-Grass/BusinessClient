@@ -121,11 +121,22 @@ export const getAvatarByBusinessRegistrationId = async (registrationId: number):
 		headers: authHeader(),
 	  });
 	  return response.data;
-	} catch (error) {
-	  console.error('Error fetching avatar by Business Registration ID:', error);
-	  throw handleApiError(error);
+	} catch (error: any) {
+	  // Log detailed Axios error for more information
+	  if (error.response) {
+		console.error('Response error:', error.response.data); // Error from the server
+		console.error('Response status:', error.response.status); // HTTP status code
+		console.error('Response headers:', error.response.headers); // Headers
+	  } else if (error.request) {
+		console.error('Request error:', error.request); // Request was made but no response received
+	  } else {
+		console.error('Error message:', error.message); // Something else triggered the error
+	  }
+	  console.error('Config:', error.config); // Axios config details
+	  throw handleApiError(error); // Existing error handler
 	}
   };
+  
 
   export const getAvatarByOutletId = async (outletId: number): Promise<AvatarInfo> => {
 	try {
