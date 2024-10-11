@@ -7,6 +7,7 @@ import { Input } from '../../components/components/ui/input';
 import { Button } from '../../components/components/ui/button';
 import router from 'next/router';
 import { isAxiosError } from 'axios';
+import { BusinessAccount } from '../profile';
 
 interface Voucher {
     listing_id: number;
@@ -44,6 +45,7 @@ const VoucherList = () => {
     const [businessRegistration, setBusinessRegistration] = useState<BusinessRegistration | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<string>(''); // store business_id or outlet_id
     const [searchTerm, setSearchTerm] = useState(''); // Single search term
+    const [profile,setProfile] = useState<BusinessAccount>()
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -57,6 +59,7 @@ const VoucherList = () => {
                 const response = await api.get(`/api/business/profile`);
                 if (response.status === 200) {
                     setOutlets(response.data.outlets);
+                    setProfile(response.data.business)
                     setBusinessRegistration(response.data.registeredBusiness); // Set the business registration data
                 } else {
                     setError(response.data.message || 'Failed to fetch profile');
@@ -220,7 +223,12 @@ const VoucherList = () => {
                 />
                 <Button onClick={handleSearch}>Search</Button>
             </div>
-
+            <div className={`flex flex-col relative ${profile?.banStatus && "cursor-not-allowed"}`}>
+            {profile?.banStatus && <div className="absolute bg-gray-400 w-full h-full font-bold opacity-90 p-10 flex flex-col justify-center items-center">
+        <div>Your account has been locked by our admin due to the following reason(s):</div>
+        <div>{profile.banRemarks}</div>
+        <div>Please resolve the above issues to proceed further.</div>
+        </div> }
             <div className='flex justify-between items-center space-y-2'>
                 <h2 className='text-lg font-semibold'>Your Outlets</h2>
 
@@ -310,6 +318,7 @@ const VoucherList = () => {
                 )
                 }
 
+            </div>
             </div>
         </div>
     );

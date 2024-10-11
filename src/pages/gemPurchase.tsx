@@ -26,7 +26,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/components/button";
 
-const priceDetails = [
+export const priceDetails = [
   {
     price: "$5",
     gems: 50,

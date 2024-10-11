@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 //import axiosClient from '../network/axiosClient';
 import { useRouter } from 'next/router';
 
@@ -32,6 +32,7 @@ import {
 } from "@/components/Register/ui/hover-card"
 import api from '@/api';
 import withAuth from '../withAuth';
+import { BusinessAccount } from '../profile';
 
 
 const formSchema = z.object({
@@ -89,7 +90,31 @@ const Register = () => {
     const [success, setSuccess] = useState<string | null>(null);
     const [businessType, setBusinessType] = useState("Pte Ltd"); // Default value for dropdown
     const [combinedName, setCombinedName] = useState(""); // To store combined name (input + dropdown)
+    const [profile, setProfile] = useState<BusinessAccount>()
 
+    useEffect(() => {
+        const fetchProfile = async () => {
+          try {
+            const token = Cookies.get("authToken");
+            if (!token) {
+              setError("No token found. Please log in.");
+              return;
+            }
+            const response = await api.get(`/api/business/profile`);
+            if (response.status === 200) {
+              setProfile(response.data.business);
+  
+            } else {
+              setError(response.data.message || "Failed to fetch profile");
+            }
+          } catch (err) {
+            setError("An error occurred while fetching profile");
+            console.error("API call error:", err);
+          }
+        };
+    
+        fetchProfile();
+      }, []);
 
     // 1. Define your form, Initialize the useForm hook with zod schema validation
     const form = useForm<z.infer<typeof formSchema>>({
@@ -170,6 +195,12 @@ const Register = () => {
     }
 
     return (
+        <div className={`flex flex-col relative ${profile?.banStatus && "cursor-not-allowed"}`}>
+              {profile?.banStatus && <div className="absolute bg-gray-400 w-full h-full font-bold opacity-90 p-10 flex flex-col justify-center items-center">
+    <div>Your account has been locked by our admin due to the following reason(s):</div>
+    <div>{profile.banRemarks}</div>
+    <div>Please resolve the above issues to proceed further.</div>
+    </div> }
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 {/* Business Entity Name */}
@@ -328,6 +359,7 @@ const Register = () => {
                 <Button type="submit">Register</Button>
             </form>
         </Form>
+        </div>
     )
         ;
 };
