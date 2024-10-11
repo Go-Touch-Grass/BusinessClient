@@ -11,6 +11,17 @@ import ConfirmationModal from "../components/Profile/confirmationModal";
 import { DataTable } from "@/components/components/global/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { priceDetails } from "./gemPurchase";
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
 export type Transaction = {
   currency_amount: string;
@@ -25,6 +36,7 @@ export interface BusinessAccount {
   email: string;
   username: string;
   gem_balance: number;
+  min_gem_balance: number;
   banStatus: boolean;
   banRemarks: string;
   transactions: Transaction[]
@@ -139,6 +151,7 @@ const ProfilePage: React.FC = () => {
     email: "",
     username: "",
     gem_balance: 0,
+    min_gem_balance: 0,
     banStatus: false,
     banRemarks: "",
     transactions:[]
@@ -149,7 +162,8 @@ const ProfilePage: React.FC = () => {
   const [isAccountModalVisible, setIsAccountModalVisible] =
     useState<boolean>(false); // Modal for account deletion
   const router = useRouter();
-
+  const stripe = useStripe();
+  const elements = useElements();
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -171,6 +185,7 @@ const ProfilePage: React.FC = () => {
           setOutlets(response.data.outlets);
           setBusinessRegistration(response.data.registeredBusiness); // Set the business registration data
           setFormData(response.data.business);
+          console.log(response.data.business)
         } else {
           setError(response.data.message || "Failed to fetch profile");
         }
@@ -180,8 +195,71 @@ const ProfilePage: React.FC = () => {
       }
     };
 
+    
+
     fetchProfile();
+  
   }, []);
+
+  useEffect(() => {
+    const recurringPayments = async (difference: number) => {
+      //auto charge card if more gems required
+      console.log("amnt to top up: ", difference)
+      const index = priceDetails.findIndex(detail => detail.totalGems > difference);
+      const price = Number(priceDetails[index].price.substring(1))
+      const gems = priceDetails[index].totalGems
+      try {
+        const { clientSecret, paymentIntentId } = await api
+          .post("/api/payment/create-payment-intent", {
+            amount: price * 100, // in cents
+            currency: "sgd",
+          })
+          .then((response) => {console.log("paymentintent ", response.data) 
+            return (response.data)});
+  
+        if (!clientSecret || !paymentIntentId) {
+          console.error("Error creating payment intent");
+          return;
+        }
+  
+        // Check if the user has a saved payment method
+        const { paymentMethodId } = await api
+          .get("/api/payment/get-payment-method-id")
+          .then((response) => {console.log("payment method id,", response.data) 
+            return (response.data)});
+  
+        if (paymentMethodId) {
+          // Use saved payment method
+          const { error, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
+            payment_method: paymentMethodId,
+          });
+  
+          if (error) {
+            console.error(error.message || "Payment failed");
+            return;
+          }
+  
+          if (paymentIntent?.status === "succeeded") {
+            await api.post("/api/business/verify_topup", {
+              paymentIntentId,
+              gemsAdded: gems,
+            });
+            console.log("Payment and top-up succeeded!");
+          }
+        } else {
+         console.error("payment method missing id")
+  
+        }
+      } catch (error) {
+        console.error("An error occurred during payment processing.");
+      } 
+    }
+
+    if (profile && profile?.gem_balance < profile?.min_gem_balance){
+      const difference = profile?.min_gem_balance - profile?.gem_balance
+      recurringPayments(difference)
+    }
+  }, [profile?.min_gem_balance])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -371,7 +449,8 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  //recurring gem purchase for any auto renewal subscriptions
+  
+
 
   return (
     <div className="px-4 space-y-6 md:px-6">
@@ -639,4 +718,10 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-export default withAuth(ProfilePage);
+const ProfileWrapper: React.FC = () => (
+  <Elements stripe={stripePromise}>
+    <ProfilePage />
+  </Elements>
+);
+
+export default withAuth(ProfileWrapper);
