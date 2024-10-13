@@ -14,11 +14,12 @@ export interface Item {
     type: ItemType;
     filepath: string;
     approved: boolean;
+    rejected: boolean;
     business_register_business?: {
-        id: number;
+        registration_id: number;
     };
     outlet?: {
-        id: number;
+        outlet_id: number;
     };
     scale?: number;
     xOffset?: number;
@@ -84,6 +85,21 @@ export const uploadCustomItem = async (
         return response.data;
     } catch (error) {
         console.error("Error uploading custom item:", error);
+        throw handleApiError(error);
+    }
+};
+
+export const getCustomItems = async (): Promise<Item[]> => {
+    try {
+        const response = await api.get("/api/business/items", {
+            headers: authHeader(),
+        });
+        if (!Array.isArray(response.data)) {
+            throw new Error("Invalid response format");
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching custom items:", error);
         throw handleApiError(error);
     }
 };

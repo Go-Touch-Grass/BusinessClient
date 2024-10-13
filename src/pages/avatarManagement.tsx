@@ -92,6 +92,10 @@ const AvatarManagement: React.FC = () => {
 		router.push('/customItem');
 	};
 
+	const handleViewCustomItems = () => {
+		router.push('/viewCustomItems');
+	};
+
 	return (
 		<div className="container mx-auto p-6">
 			<h1 className="text-4xl font-bold text-zinc-700 text-center mb-6">
@@ -108,20 +112,19 @@ const AvatarManagement: React.FC = () => {
 					<Button onClick={handleCreateAvatar}>
 						Create New Avatar
 					</Button>
-					<Button 
-						onClick={handleViewAvatars} 
-						//disabled={isLoading || !hasAvatars}
-						//title={!hasAvatars ? "No avatars available" : ""}
-					>
+					<Button onClick={handleViewAvatars} variant="outline">
 						View Avatars
 					</Button>
 				</div>
 				<div className="flex justify-center space-x-4">
-					<Button onClick={handleCustomAvatar} variant="outline">
-						Custom Avatar
+					<Button onClick={handleCustomAvatar}>
+						Upload Custom Avatar
 					</Button>
-					<Button onClick={handleCustomItem} variant="outline">
-						Custom Item
+					<Button onClick={handleCustomItem}>
+						Upload Custom Item
+					</Button>
+					<Button onClick={handleViewCustomItems} variant="outline">
+						View All Custom Items
 					</Button>
 				</div>
 			</div>

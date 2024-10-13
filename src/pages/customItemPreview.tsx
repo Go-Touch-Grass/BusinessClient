@@ -28,8 +28,8 @@ const CustomItemPreview: React.FC = () => {
     return (
         <div className="container mx-auto p-6">
             <div className="flex justify-between items-center mb-6">
-                <Button onClick={() => router.push('/customItem')} variant="outline">
-                    Back
+                <Button onClick={() => router.push('/avatarManagement')} variant="outline">
+                    Back to Avatar Management
                 </Button>
                 <h1 className="text-4xl font-bold text-zinc-700 text-center">
                     Custom Item Submitted
@@ -67,6 +67,10 @@ const CustomItemPreview: React.FC = () => {
                 <p className="text-sm text-gray-600 mt-4">
                     You will be notified once your item has been approved.
                 </p>
+
+                {/* <Button onClick={() => router.push('/viewCustomItems')} variant="secondary">
+                    View All Custom Items
+                </Button> */}
             </div>
         </div>
     );
