@@ -6,6 +6,7 @@ import api from "@/api";
 import Cookies from 'js-cookie';
 import { ItemType, Item, getItems, uploadCustomItem } from "@/api/itemApi";
 import Image from "next/image";
+import AvatarRenderer from '@/components/avatar/AvatarRenderer';
 
 interface Outlet {
     outlet_name: string;
@@ -330,43 +331,13 @@ const CustomItem: React.FC = () => {
                 {previewUrl && (
                     <div className="w-full mb-6">
                         <h2 className="text-xl font-semibold mb-2">Preview:</h2>
-                        <div className="flex flex-col items-center mt-4">
-                            <div className="relative">
-                                {avatarCustomization[ItemType.BASE] && (
-                                    <Image
-                                        src={avatarCustomization[ItemType.BASE].filepath}
-                                        alt={avatarCustomization[ItemType.BASE].name}
-                                        width={170}
-                                        height={170}
-                                    />
-                                )}
-                                {avatarCustomization[ItemType.HAT] && selectedItemType !== ItemType.HAT && (
-                                    <Image
-                                        src={avatarCustomization[ItemType.HAT].filepath}
-                                        alt={avatarCustomization[ItemType.HAT].name}
-                                        width={90}
-                                        height={90}
-                                        className="absolute top-[-5px] left-[38px]"
-                                    />
-                                )}
-                                {avatarCustomization[ItemType.BOTTOM] && selectedItemType !== ItemType.BOTTOM && (
-                                    <Image
-                                        src={avatarCustomization[ItemType.BOTTOM].filepath}
-                                        alt={avatarCustomization[ItemType.BOTTOM].name}
-                                        width={160}
-                                        height={100}
-                                        className="absolute top-[115px] left-[5px]"
-                                    />
-                                )}
-                                {avatarCustomization[ItemType.SHIRT] && selectedItemType !== ItemType.SHIRT && (
-                                    <Image
-                                        src={avatarCustomization[ItemType.SHIRT].filepath}
-                                        alt={avatarCustomization[ItemType.SHIRT].name}
-                                        width={105}
-                                        height={91}
-                                        className="absolute top-[76px] left-[32px]"
-                                    />
-                                )}
+                        <div className="flex flex-col md:flex-row items-center md:items-start justify-center space-y-6 md:space-y-0 md:space-x-8">
+                            <div className="relative w-[170px] h-[170px]">
+                                <AvatarRenderer
+                                    customization={avatarCustomization}
+                                    width={170}
+                                    height={170}
+                                />
                                 <div className={`absolute ${getItemPositionStyle(selectedItemType)}`}>
                                     <Image
                                         src={previewUrl}
@@ -380,9 +351,11 @@ const CustomItem: React.FC = () => {
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        {renderCustomItemControls()}
+                            <div className="w-full md:w-1/2">
+                                {renderCustomItemControls()}
+                            </div>
+                        </div>
 
                         <p className="mt-6 text-center">
                             Check out how your custom {selectedItemType === ItemType.HAT ? "Hat" :
