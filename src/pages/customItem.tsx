@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
@@ -26,6 +26,46 @@ interface BusinessRegistration {
     proof?: string;
 }
 
+interface NamingModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: (name: string) => void;
+    initialName: string;
+}
+
+const NamingModal: React.FC<NamingModalProps> = ({ isOpen, onClose, onConfirm, initialName }) => {
+    const [name, setName] = useState(initialName);
+
+    useEffect(() => {
+        setName(initialName);
+    }, [initialName]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg">
+                <h2 className="text-xl font-bold mb-4">Name Your Item</h2>
+                <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter item name"
+                    className="border p-2 mb-4 w-full"
+                />
+                <div className="flex justify-end space-x-2">
+                    <Button onClick={onClose} variant="outline">
+                        Cancel
+                    </Button>
+                    <Button onClick={() => onConfirm(name)}>
+                        Upload
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const CustomItem: React.FC = () => {
     const router = useRouter();
     const [file, setFile] = useState<File | null>(null);
@@ -51,6 +91,8 @@ const CustomItem: React.FC = () => {
     const [customItemScale, setCustomItemScale] = useState<number>(1);
     const [customItemOffsetX, setCustomItemOffsetX] = useState<number>(0);
     const [customItemOffsetY, setCustomItemOffsetY] = useState<number>(0);
+    const [isNamingModalOpen, setIsNamingModalOpen] = useState<boolean>(false);
+    const [itemName, setItemName] = useState<string>("");
 
     useEffect(() => {
         if (previewUrl) {
@@ -193,7 +235,7 @@ const CustomItem: React.FC = () => {
         );
     };
 
-    const handleUpload = async () => {
+    const handleUpload = useCallback(() => {
         if (!file) {
             setError("Please select a file to upload.");
             return;
@@ -204,10 +246,19 @@ const CustomItem: React.FC = () => {
             return;
         }
 
+        setIsNamingModalOpen(true);
+    }, [file, selectedOutlet, businessRegistration]);
+
+    const handleConfirmUpload = useCallback(async (name: string) => {
+        if (!name.trim()) {
+            setError("Please enter a name for the item.");
+            return;
+        }
+
         try {
             const uploadedItem = await uploadCustomItem(
-                file,
-                `Custom ${selectedItemType}`,
+                file!,
+                name,
                 selectedItemType,
                 customItemScale,
                 customItemOffsetX,
@@ -216,17 +267,21 @@ const CustomItem: React.FC = () => {
                 selectedOutlet || undefined
             );
 
-            alert("Custom item uploaded successfully!");
-            setFile(null);
-            setSelectedOutlet(null);
-            setSelectedItemType(ItemType.HAT);
-            // Optionally, you can update the local state with the new item
-            setItems(prevItems => [...prevItems, uploadedItem]);
+            // Store the uploaded item data in sessionStorage
+            sessionStorage.setItem('uploadedItem', JSON.stringify(uploadedItem));
+
+            // Navigate to the preview page with just the ID in the query
+            router.push({
+                pathname: '/customItemPreview',
+                query: { id: uploadedItem.id },
+            });
         } catch (err) {
             setError("An error occurred while uploading the custom item.");
             console.error('API call error:', err);
+        } finally {
+            setIsNamingModalOpen(false);
         }
-    };
+    }, [file, selectedItemType, customItemScale, customItemOffsetX, customItemOffsetY, selectedOutlet, businessRegistration, router]);
 
     const renderCustomItemControls = () => {
         return (
@@ -401,6 +456,13 @@ const CustomItem: React.FC = () => {
                     Designs are subject to approval.
                 </p>
                 {error && <p className="text-red-500">{error}</p>}
+
+                <NamingModal
+                    isOpen={isNamingModalOpen}
+                    onClose={() => setIsNamingModalOpen(false)}
+                    onConfirm={handleConfirmUpload}
+                    initialName={itemName}
+                />
             </div>
         </div>
     );
