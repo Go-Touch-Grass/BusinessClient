@@ -10,6 +10,8 @@ import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
 import Cookies from 'js-cookie';
 import api from '@/api';
+import AvatarRenderer from '@/components/avatar/AvatarRenderer';
+import WardrobeSelector from '@/components/avatar/WardrobeSelector';
 
 interface Outlet {
     outlet_name: string;
@@ -160,32 +162,6 @@ const CreateAvatar: React.FC = () => {
 		setSelectedOutlet(selectedId);
 	};
 
-	const renderWardrobeItems = () => {
-		const filteredItems = items.filter(
-			(item) => item.type === selectedCategory
-		);
-
-		return (
-			<div className="flex space-x-4 overflow-x-auto">
-				{filteredItems.map((item) => (
-					<div
-						key={item.id}
-						onClick={() => handleSelectItem(item)}
-						className="cursor-pointer"
-					>
-						<Image
-							src={item.filepath}
-							alt={item.name}
-							width={64}
-							height={64}
-							className="rounded border"
-						/>
-					</div>
-				))}
-			</div>
-		);
-	};
-
 	return (
 		<div className="container mx-auto p-6">
 			<div className="flex justify-between items-center mb-2 mt-[-10px]">
@@ -195,13 +171,13 @@ const CreateAvatar: React.FC = () => {
 				<h1 className="text-4xl font-bold text-zinc-700 text-center">
 					Create Your Avatar
 				</h1>
-				<div className="w-[100px]"></div> {/* Spacer for alignment */}
+				<div className="w-[100px]"></div>
 			</div>
 
-			 {/* Dropdown to select outlet or business registration */}
-			 <div className="mb-6">
-                <label htmlFor="entitySelect" className="block mb-2 font-semibold">Select Business/Outlet:</label>
-                <select
+			{/* Dropdown to select outlet or business registration */}
+			<div className="mb-6">
+				<label htmlFor="entitySelect" className="block mb-2 font-semibold">Select Business/Outlet:</label>
+				<select
 					id="entitySelect"
 					value={selectedOutlet !== null ? selectedOutlet.toString() : ""}
 					onChange={handleSelectChange}
@@ -214,90 +190,34 @@ const CreateAvatar: React.FC = () => {
 					)}
 					{outlets.map((outlet) => (
 						<option key={outlet.outlet_id} value={outlet.outlet_id.toString()}> {/* Convert to string */}
-							{outlet.outlet_name} (Outlet)
+								{outlet.outlet_name} (Outlet)
 						</option>
 					))}
 				</select>
-            </div>
+			</div>
 
-
-			<div className="flex flex-col items-center mt-4">
-				<div className="relative">
-					{customization[ItemType.BASE] && (
-						<Image
-							src={customization[ItemType.BASE].filepath}
-							alt={customization[ItemType.BASE].name}
-							width={170}
-							height={170}
-						/>
-					)}
-					{customization[ItemType.HAT] && (
-						<Image
-							src={customization[ItemType.HAT].filepath}
-							alt={customization[ItemType.HAT].name}
-							width={90}
-							height={90}
-							className="absolute top-[-5px] left-[38px]"
-						/>
-					)}
-					{customization[ItemType.BOTTOM] && (
-						<Image
-							src={customization[ItemType.BOTTOM].filepath}
-							alt={customization[ItemType.BOTTOM].name}
-							width={160}
-							height={100}
-							className="absolute top-[115px] left-[5px]"
-						/>
-					)}
-					{customization[ItemType.SHIRT] && (
-						<Image
-							src={customization[ItemType.SHIRT].filepath}
-							alt={customization[ItemType.SHIRT].name}
-							width={105}
-							height={91}
-							className="absolute top-[76px] left-[32px]"
-						/>
-					)}
+			<div className="flex flex-col md:flex-row justify-center items-start gap-8">
+				<div className="flex flex-col items-center">
+					<AvatarRenderer
+						customization={customization}
+						width={170}
+						height={170}
+					/>
 				</div>
+
+				<WardrobeSelector
+					items={items}
+					selectedCategory={selectedCategory}
+					setSelectedCategory={setSelectedCategory}
+					handleSelectItem={handleSelectItem}
+				/>
 			</div>
 
-			<div className="mt-6 flex justify-center space-x-4">
-				<Button
-					onClick={() => setSelectedCategory(ItemType.BASE)}
-					variant={selectedCategory === ItemType.BASE ? "default" : "outline"}
-				>
-					Base
-				</Button>
-				<Button
-					onClick={() => setSelectedCategory(ItemType.HAT)}
-					variant={selectedCategory === ItemType.HAT ? "default" : "outline"}
-				>
-					Hat
-				</Button>
-				<Button
-					onClick={() => setSelectedCategory(ItemType.SHIRT)}
-					variant={selectedCategory === ItemType.SHIRT ? "default" : "outline"}
-				>
-					Upper Wear
-				</Button>
-				<Button
-					onClick={() => setSelectedCategory(ItemType.BOTTOM)}
-					variant={selectedCategory === ItemType.BOTTOM ? "default" : "outline"}
-				>
-					Lower Wear
-				</Button>
-			</div>
-
-			<div className="mt-6 overflow-x-auto">
-				<div className="mt-6 flex justify-center">
-					{renderWardrobeItems()}
-				</div>
-			</div>
-
-			<div className="mt-6 flex justify-center">
+			<div className="p-10 mt-20 flex justify-center">
 				<Button
 					onClick={handleCreateAvatar}
 					disabled={isLoading}
+					className="w-full md:w-auto px-4 py-2"
 				>
 					{isLoading ? "Creating..." : "Finish Creating Avatar"}
 				</Button>
