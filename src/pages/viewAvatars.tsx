@@ -6,6 +6,8 @@ import Cookies from 'js-cookie';
 import { useRouter } from "next/router";
 import { Button } from "@/components/Register/ui/button";
 import api from "@/api";
+import AvatarRenderer from '@/components/avatar/AvatarRenderer';
+import { ItemType } from "../api/itemApi";
 
 interface Outlet {
     outlet_name: string;
@@ -37,6 +39,17 @@ const ViewAvatars: React.FC = () => {
     useEffect(() => {
         fetchProfile();
     }, []);
+
+    useEffect(() => {
+        if (businessRegistration && outlets.length === 0) {
+            // Only business registration exists
+            fetchAvatarsByBusinessRegistrationId(businessRegistration.registration_id);
+        } else if (!businessRegistration && outlets.length === 1) {
+            // Only one outlet exists
+            setSelectedOutlet(outlets[0].outlet_id);
+            fetchAvatarsByOutletId(outlets[0].outlet_id);
+        }
+    }, [businessRegistration, outlets]);
 
     const fetchProfile = async () => {
         try {
@@ -127,41 +140,16 @@ const ViewAvatars: React.FC = () => {
 
     const renderAvatar = (avatar: AvatarInfo) => (
         <div className="relative w-[170px] h-[170px] cursor-pointer" onClick={() => handleAvatarClick(avatar.id)}>
-            {avatar.base && (
-                <Image
-                    src={avatar.base.filepath}
-                    alt={avatar.base.name}
-                    width={170}
-                    height={170}
-                />
-            )}
-            {avatar.hat && (
-                <Image
-                    src={avatar.hat.filepath}
-                    alt={avatar.hat.name}
-                    width={90}
-                    height={90}
-                    className="absolute top-[-5px] left-[38px]"
-                />
-            )}
-            {avatar.bottom && (
-                <Image
-                    src={avatar.bottom.filepath}
-                    alt={avatar.bottom.name}
-                    width={160}
-                    height={100}
-                    className="absolute top-[115px] left-[5px]"
-                />
-            )}
-            {avatar.shirt && (
-                <Image
-                    src={avatar.shirt.filepath}
-                    alt={avatar.shirt.name}
-                    width={105}
-                    height={91}
-                    className="absolute top-[76px] left-[32px]"
-                />
-            )}
+            <AvatarRenderer
+                customization={{
+                    [ItemType.BASE]: avatar.base || null,
+                    [ItemType.HAT]: avatar.hat || null,
+                    [ItemType.SHIRT]: avatar.shirt || null,
+                    [ItemType.BOTTOM]: avatar.bottom || null,
+                }}
+                width={170}
+                height={170}
+            />
         </div>
     );
 
