@@ -18,6 +18,35 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
     width = 170,
     height = 170,
 }) => {
+    const renderItem = (item: Item | null, defaultWidth: number, defaultHeight: number, defaultTop: number, defaultLeft: number) => {
+        if (!item) return null;
+
+        const scale = item.scale ?? 1;
+        const xOffset = item.xOffset ?? 0;
+        const yOffset = item.yOffset ?? 0;
+
+        const itemWidth = Math.round(defaultWidth * scale);
+        const itemHeight = Math.round(defaultHeight * scale);
+        const itemTop = Math.round(defaultTop + yOffset);
+        const itemLeft = Math.round(defaultLeft + xOffset);
+
+        return (
+            <Image
+                src={item.filepath}
+                alt={item.name}
+                width={itemWidth}
+                height={itemHeight}
+                className="absolute"
+                style={{
+                    top: `${itemTop}px`,
+                    left: `${itemLeft}px`,
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                }}
+            />
+        );
+    };
+
     return (
         <div className="relative" style={{ width: `${width}px`, height: `${height}px` }}>
             {customization[ItemType.BASE] && (
@@ -28,44 +57,26 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
                     height={height}
                 />
             )}
-            {customization[ItemType.HAT] && (
-                <Image
-                    src={customization[ItemType.HAT].filepath}
-                    alt={customization[ItemType.HAT].name}
-                    width={Math.round(width * 0.53)}
-                    height={Math.round(height * 0.53)}
-                    className="absolute"
-                    style={{
-                        top: `${Math.round(height * -0.029)}px`,
-                        left: `${Math.round(width * 0.224)}px`,
-                    }}
-                />
+            {renderItem(
+                customization[ItemType.HAT],
+                Math.round(width * 0.53),
+                Math.round(height * 0.53),
+                Math.round(height * -0.029),
+                Math.round(width * 0.224)
             )}
-            {customization[ItemType.BOTTOM] && (
-                <Image
-                    src={customization[ItemType.BOTTOM].filepath}
-                    alt={customization[ItemType.BOTTOM].name}
-                    width={Math.round(width * 0.94)}
-                    height={Math.round(height * 0.59)}
-                    className="absolute"
-                    style={{
-                        top: `${Math.round(height * 0.676)}px`,
-                        left: `${Math.round(width * 0.029)}px`,
-                    }}
-                />
+            {renderItem(
+                customization[ItemType.BOTTOM],
+                Math.round(width * 0.94),
+                Math.round(height * 0.59),
+                Math.round(height * 0.676),
+                Math.round(width * 0.029)
             )}
-            {customization[ItemType.SHIRT] && (
-                <Image
-                    src={customization[ItemType.SHIRT].filepath}
-                    alt={customization[ItemType.SHIRT].name}
-                    width={Math.round(width * 0.62)}
-                    height={Math.round(height * 0.54)}
-                    className="absolute"
-                    style={{
-                        top: `${Math.round(height * 0.447)}px`,
-                        left: `${Math.round(width * 0.188)}px`,
-                    }}
-                />
+            {renderItem(
+                customization[ItemType.SHIRT],
+                Math.round(width * 0.62),
+                Math.round(height * 0.54),
+                Math.round(height * 0.447),
+                Math.round(width * 0.188)
             )}
         </div>
     );

@@ -53,6 +53,23 @@ const CustomItem: React.FC = () => {
     const [customItemOffsetY, setCustomItemOffsetY] = useState<number>(0);
 
     useEffect(() => {
+        if (previewUrl) {
+            setAvatarCustomization(prev => ({
+                ...prev,
+                [selectedItemType]: {
+                    id: 0,
+                    name: 'Custom Item',
+                    filepath: previewUrl,
+                    type: selectedItemType,
+                    scale: customItemScale,
+                    xOffset: customItemOffsetX,
+                    yOffset: customItemOffsetY
+                }
+            }));
+        }
+    }, [previewUrl, selectedItemType, customItemScale, customItemOffsetX, customItemOffsetY]);
+
+    useEffect(() => {
         fetchProfile();
         fetchItems();
     }, []);
@@ -334,25 +351,10 @@ const CustomItem: React.FC = () => {
                         <div className="flex flex-col md:flex-row items-center md:items-start justify-center space-y-6 md:space-y-0 md:space-x-8">
                             <div className="relative w-[170px] h-[170px]">
                                 <AvatarRenderer
-                                    customization={{
-                                        ...avatarCustomization,
-                                        [selectedItemType]: null // Remove the custom item from AvatarRenderer
-                                    }}
+                                    customization={avatarCustomization}
                                     width={170}
                                     height={170}
                                 />
-                                <div className={`absolute ${getItemPositionStyle(selectedItemType)}`}>
-                                    <Image
-                                        src={previewUrl}
-                                        alt="Custom Item"
-                                        layout="fill"
-                                        objectFit="contain"
-                                        style={{
-                                            transform: `scale(${customItemScale}) translate(${customItemOffsetX}px, ${customItemOffsetY}px)`,
-                                            transformOrigin: 'top left',
-                                        }}
-                                    />
-                                </div>
                             </div>
 
                             <div className="w-full md:w-1/2">
