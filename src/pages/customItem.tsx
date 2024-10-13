@@ -334,7 +334,10 @@ const CustomItem: React.FC = () => {
                         <div className="flex flex-col md:flex-row items-center md:items-start justify-center space-y-6 md:space-y-0 md:space-x-8">
                             <div className="relative w-[170px] h-[170px]">
                                 <AvatarRenderer
-                                    customization={avatarCustomization}
+                                    customization={{
+                                        ...avatarCustomization,
+                                        [selectedItemType]: null // Remove the custom item from AvatarRenderer
+                                    }}
                                     width={170}
                                     height={170}
                                 />

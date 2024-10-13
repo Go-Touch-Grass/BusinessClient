@@ -5,7 +5,7 @@ export enum ItemType {
     HAT = "hat",
     SHIRT = "shirt",
     BOTTOM = "bottom",
-    BASE = "base", 
+    BASE = "base",
 }
 
 export interface Item {
@@ -13,6 +13,16 @@ export interface Item {
     name: string;
     type: ItemType;
     filepath: string;
+    approved: boolean;
+    business_register_business?: {
+        id: number;
+    };
+    outlet?: {
+        id: number;
+    };
+    scale?: number;
+    xOffset?: number;
+    yOffset?: number;
 }
 
 const getAuthToken = (): string | null => {
@@ -83,8 +93,7 @@ function handleApiError(error): Error {
         console.error("Error response:", error.response.data);
         console.error("Error status:", error.response.status);
         return new Error(
-            `Server error: ${
-                error.response.data.message || "Unknown error"
+            `Server error: ${error.response.data.message || "Unknown error"
             }`
         );
     } else if (error.request) {
