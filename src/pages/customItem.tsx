@@ -31,9 +31,10 @@ interface NamingModalProps {
     onClose: () => void;
     onConfirm: (name: string) => void;
     initialName: string;
+    error: string | null;  // Add this line
 }
 
-const NamingModal: React.FC<NamingModalProps> = ({ isOpen, onClose, onConfirm, initialName }) => {
+const NamingModal: React.FC<NamingModalProps> = ({ isOpen, onClose, onConfirm, initialName, error }) => {
     const [name, setName] = useState(initialName);
 
     useEffect(() => {
@@ -53,6 +54,7 @@ const NamingModal: React.FC<NamingModalProps> = ({ isOpen, onClose, onConfirm, i
                     placeholder="Enter item name"
                     className="border p-2 mb-4 w-full"
                 />
+                {error && <p className="text-red-500 mb-4">{error}</p>}
                 <div className="flex justify-end space-x-2">
                     <Button onClick={onClose} variant="outline">
                         Cancel
@@ -462,6 +464,7 @@ const CustomItem: React.FC = () => {
                     onClose={() => setIsNamingModalOpen(false)}
                     onConfirm={handleConfirmUpload}
                     initialName={itemName}
+                    error={error} 
                 />
             </div>
         </div>
