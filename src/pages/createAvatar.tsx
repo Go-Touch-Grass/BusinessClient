@@ -2,12 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import {
-	getItems,
 	createAvatar,
 	AvatarType,
-	Item,
-	ItemType,
 } from "../api/avatarApi";
+import { ItemType, Item, getItems } from "../api/itemApi";
 import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
 import Cookies from 'js-cookie';

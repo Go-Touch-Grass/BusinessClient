@@ -1,19 +1,6 @@
 import api from "@/api";
 import Cookies from "js-cookie";
-
-export enum ItemType {
-	HAT = "hat",
-	SHIRT = "shirt",
-	BOTTOM = "bottom",
-	BASE = "base", 
-}
-
-export interface Item {
-	id: number;
-	name: string;
-	type: ItemType;
-	filepath: string;
-}
+import { Item } from "./itemApi";
 
 export interface Avatar {
 	id: number;
@@ -48,21 +35,6 @@ const getAuthToken = (): string | null => {
 const authHeader = () => {
 	const token = getAuthToken();
 	return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
-export const getItems = async (): Promise<Item[]> => {
-	try {
-		const response = await api.get("/api/items", {
-			headers: authHeader(),
-		});
-		if (!Array.isArray(response.data)) {
-			throw new Error("Invalid response format");
-		}
-		return response.data;
-	} catch (error) {
-		console.error("Error fetching items:", error);
-		throw handleApiError(error);
-	}
 };
 
 export const createAvatar = async (

@@ -2,14 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import {
-	getItems,
 	getAvatarById,
 	updateAvatar,
-	AvatarType,
-	Item,
-	ItemType,
 	AvatarInfo,
 } from "../api/avatarApi";
+import { ItemType, Item, getItems } from "../api/itemApi";
 import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
 

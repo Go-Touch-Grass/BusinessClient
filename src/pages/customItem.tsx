@@ -4,7 +4,7 @@ import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
 import api from "@/api";
 import Cookies from 'js-cookie';
-import { ItemType, Item, getItems } from "@/api/avatarApi";
+import { ItemType, Item, getItems, uploadCustomItem } from "@/api/itemApi";
 import Image from "next/image";
 
 interface Outlet {
@@ -186,27 +186,24 @@ const CustomItem: React.FC = () => {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('customItem', file);
-        formData.append('entityType', selectedOutlet ? 'outlet' : 'business');
-        formData.append('entityId', selectedOutlet ? selectedOutlet.toString() : businessRegistration!.registration_id.toString());
-        formData.append('itemType', selectedItemType);
-
         try {
-            const response = await api.post('/api/custom-item/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const uploadedItem = await uploadCustomItem(
+                file,
+                `Custom ${selectedItemType}`,
+                selectedItemType,
+                customItemScale,
+                customItemOffsetX,
+                customItemOffsetY,
+                selectedOutlet ? undefined : businessRegistration!.registration_id,
+                selectedOutlet || undefined
+            );
 
-            if (response.status === 200) {
-                alert("Custom item uploaded successfully!");
-                setFile(null);
-                setSelectedOutlet(null);
-                setSelectedItemType(ItemType.HAT);
-            } else {
-                setError("Failed to upload custom item.");
-            }
+            alert("Custom item uploaded successfully!");
+            setFile(null);
+            setSelectedOutlet(null);
+            setSelectedItemType(ItemType.HAT);
+            // Optionally, you can update the local state with the new item
+            setItems(prevItems => [...prevItems, uploadedItem]);
         } catch (err) {
             setError("An error occurred while uploading the custom item.");
             console.error('API call error:', err);
@@ -260,6 +257,19 @@ const CustomItem: React.FC = () => {
                 </div>
             </div>
         );
+    };
+
+    const getItemPositionStyle = (itemType: ItemType) => {
+        switch (itemType) {
+            case ItemType.HAT:
+                return 'top-[-5px] left-[38px] w-[90px] h-[90px]';
+            case ItemType.SHIRT:
+                return 'top-[76px] left-[32px] w-[105px] h-[91px]';
+            case ItemType.BOTTOM:
+                return 'top-[115px] left-[5px] w-[160px] h-[100px]';
+            default:
+                return '';
+        }
     };
 
     return (
@@ -357,20 +367,18 @@ const CustomItem: React.FC = () => {
                                         className="absolute top-[76px] left-[32px]"
                                     />
                                 )}
-                                <Image
-                                    src={previewUrl}
-                                    alt="Custom Item"
-                                    width={100}
-                                    height={100}
-                                    className={`absolute ${selectedItemType === ItemType.HAT ? 'top-[-5px] left-[38px]' :
-                                            selectedItemType === ItemType.SHIRT ? 'top-[76px] left-[32px]' :
-                                                selectedItemType === ItemType.BOTTOM ? 'top-[115px] left-[5px]' : ''
-                                        }`}
-                                    style={{
-                                        transform: `scale(${customItemScale}) translate(${customItemOffsetX}px, ${customItemOffsetY}px)`,
-                                        transformOrigin: 'center',
-                                    }}
-                                />
+                                <div className={`absolute ${getItemPositionStyle(selectedItemType)}`}>
+                                    <Image
+                                        src={previewUrl}
+                                        alt="Custom Item"
+                                        layout="fill"
+                                        objectFit="contain"
+                                        style={{
+                                            transform: `scale(${customItemScale}) translate(${customItemOffsetX}px, ${customItemOffsetY}px)`,
+                                            transformOrigin: 'top left',
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
 
