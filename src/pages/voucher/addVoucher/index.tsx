@@ -89,6 +89,7 @@ const CreateVoucherPage = () => {
             formData.append('description', description);
             formData.append('price', price.toString());
             formData.append('discount', discount.toString());
+            formData.append('duration', duration.toString());
             formData.append('business_id', registeredBusiness.registration_id.toString());
             if (selectedOutlet) {
                 formData.append('outlet_id', selectedOutlet);

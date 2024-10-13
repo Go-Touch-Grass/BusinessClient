@@ -45,6 +45,13 @@ const VoucherList = () => {
     const [selectedBranch, setSelectedBranch] = useState<string>(''); // store business_id or outlet_id
     const [searchTerm, setSearchTerm] = useState(''); // Single search term
 
+    const handleViewTransactions = (voucher: Voucher) => {
+        router.push({
+            pathname: '/viewVoucherTransaction', // Replace with the actual path to the transactions page
+            query: { listing_id: voucher.listing_id },
+        });
+    };
+
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -319,6 +326,12 @@ const VoucherList = () => {
                                             variant="default"
                                         >
                                             Edit
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleViewTransactions(voucher)} // New button to view transactions
+                                            variant="default" // Use the same variant as Edit button
+                                        >
+                                            View Transactions
                                         </Button>
                                         <Button
                                             onClick={() => handleDelete(voucher.listing_id)}

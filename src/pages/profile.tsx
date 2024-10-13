@@ -32,6 +32,7 @@ interface BusinessRegistration {
     status: string;
     remarks: string;
     proof?: string;
+    hasSubscriptionPlan: boolean;
 }
 
 const ProfilePage: React.FC = () => {
@@ -401,10 +402,13 @@ const ProfilePage: React.FC = () => {
 
                                 <div className='mt-4 flex justify-end'>
                                     <Button
-                                        className='bg-blue-500 hover:bg-blue-600 text-white'
+                                        className={`bg-blue-500 hover:bg-blue-600 text-white ${(businessRegistration?.status === 'pending' ||
+                                            (businessRegistration?.status === 'approved' && businessRegistration?.hasSubscriptionPlan))
+                                            ? 'cursor-not-allowed opacity-50'
+                                            : ''}`}
                                         onClick={() => router.push('/subscriptionPage')}
-                                        disabled={businessRegistration?.status === 'pending'
-
+                                        disabled={businessRegistration?.status === 'pending' ||
+                                            (businessRegistration?.status === 'approved' && businessRegistration?.hasSubscriptionPlan)
                                         }
                                     >
                                         Create Subscription Plan
