@@ -47,6 +47,13 @@ const VoucherList = () => {
     const [searchTerm, setSearchTerm] = useState(''); // Single search term
     const [profile,setProfile] = useState<BusinessAccount>()
 
+    const handleViewTransactions = (voucher: Voucher) => {
+        router.push({
+            pathname: '/viewVoucherTransaction', // Replace with the actual path to the transactions page
+            query: { listing_id: voucher.listing_id },
+        });
+    };
+
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -80,23 +87,38 @@ const VoucherList = () => {
         if (value === '') {
             return;
         }
-        setSelectedBranch(value);
         setVouchers([]);  // Clear vouchers
         setError('');     // Clear error message
-        fetchVouchers(value); // Fetch vouchers based on selected branch
+        setSelectedBranch(value);
+        //fetchVouchers(value); // Fetch vouchers based on selected branch
+        fetchVouchers(value, searchTerm);
     };
 
-    const fetchVouchers = async (branchId: string) => {
+    const fetchVouchers = async (branchId: string, searchTerm: string = '') => {
         try {
             let response;
+            const params: any = {};
+            if (searchTerm.trim()) {
+                params.searchTerm = searchTerm;
+            }
+            if (branchId.startsWith('registration_')) {
+                const registrationId = branchId.split('_')[1];
+                params.registration_id = registrationId;
+            } else {
+                const outletId = branchId.split('_')[1];
+                params.outlet_id = outletId;
+            }
 
+            response = await api.get(`/api/business/vouchers`, { params });
+            /*
             if (branchId.startsWith('registration_')) {
                 const registrationId = branchId.split('_')[1];  // Extract the registration_id (for main business)
                 response = await api.get(`/api/business/vouchers?registration_id=${registrationId}`);
             } else {
                 const outletId = branchId.split('_')[1]; // Extract the outlet_id
                 response = await api.get(`/api/business/vouchers?outlet_id=${outletId}`);
-            }
+            }*/
+
 
             if (response.status === 200) {
                 setVouchers(response.data.vouchers);
@@ -127,7 +149,7 @@ const VoucherList = () => {
                 if (response.data.vouchers.length === 0) {
                     // If no vouchers are found, set a message instead of an error
                     setVouchers([]);
-                    setError('No results found');
+                    setError('No vouchers found');
                 } else {
                     // If vouchers are found, clear the error message and set vouchers
                     setVouchers(response.data.vouchers);
@@ -156,10 +178,18 @@ const VoucherList = () => {
             }
         }
     };
+
     const handleSearch = () => {
         setVouchers([]);  // Clear previous results
         setError('');     // Clear any previous errors
-        searchVouchers(searchTerm); // Send search term to the backend
+        fetchVouchers(selectedBranch, searchTerm);  // Send search term to the backend
+    };
+
+    const clearSearch = () => {
+        setSearchTerm('');  // Clear search input
+        setError('');       // Clear any previous error messages
+        setVouchers([]);    // Clear current vouchers
+        fetchVouchers(selectedBranch); // Reload vouchers for the selected branch
     };
 
     const handleEdit = (voucher: Voucher) => {
@@ -222,6 +252,7 @@ const VoucherList = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <Button onClick={handleSearch}>Search</Button>
+                <Button onClick={clearSearch}>Clear Search</Button>
             </div>
             <div className={`flex flex-col relative ${profile?.banStatus && "cursor-not-allowed"}`}>
             {profile?.banStatus && <div className="absolute bg-gray-400 w-full h-full font-bold opacity-90 p-10 flex flex-col justify-center items-center">
@@ -268,13 +299,13 @@ const VoucherList = () => {
             <div className="container mx-auto">
                 <h1 className="text-2xl font-bold mb-6">Manage Vouchers</h1>
 
-                {vouchers.length === 0 ? (
+                {Array.isArray(vouchers) && vouchers.length === 0 ? (
                     <p>No vouchers available.</p>
                 ) : error === 'No results found' ? (
                     <p>No results found.</p>
                 ) : error && error !== 'No results found' ? (
                     <p className="text-red-500">{error}</p>
-                ) : (
+                ) : Array.isArray(vouchers) && vouchers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {vouchers.map((voucher) => {
                             const discountedPrice = (voucher.price - (voucher.price * voucher.discount / 100)).toFixed(2);
@@ -285,7 +316,7 @@ const VoucherList = () => {
                                 >
                                     {voucher.voucherImage && (
                                         <img
-                                            src={voucher.voucherImage}
+                                            src={(voucher.voucherImage ? `http://localhost:8080/${voucher.voucherImage}` : '/public/images/profile.png')}
                                             alt={voucher.name}
                                             className="w-full h-48 object-cover mb-4 rounded"
                                         />
@@ -305,6 +336,12 @@ const VoucherList = () => {
                                             Edit
                                         </Button>
                                         <Button
+                                            onClick={() => handleViewTransactions(voucher)} // New button to view transactions
+                                            variant="default" // Use the same variant as Edit button
+                                        >
+                                            View Transactions
+                                        </Button>
+                                        <Button
                                             onClick={() => handleDelete(voucher.listing_id)}
                                             variant="destructive"
                                         >
@@ -315,8 +352,9 @@ const VoucherList = () => {
                             );
                         })}
                     </div>
-                )
-                }
+                ) : (
+                    <p>No vouchers found.</p>
+                )}
 
             </div>
             </div>

@@ -185,7 +185,7 @@ const ViewSubscriptions = () => {
         },
       });
 
-      // Update subscriptions state only if the response is successful
+
       if (response.status === 200) {
         setSubscriptions((prevSubscriptions) =>
           prevSubscriptions.filter((sub) => sub.outlet_id !== subscription.outlet_id)
@@ -228,7 +228,7 @@ const ViewSubscriptions = () => {
         <button
           className="mt-6 px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600"
           onClick={() => {
-            router.push('/subscriptionPage'); // navigate to subscription page
+            router.push('/subscriptionPage');
           }}
         >
           Subscribe to a Plan
@@ -250,12 +250,14 @@ const ViewSubscriptions = () => {
         ) : (
           <div>
             {subscriptions.map((subscription, index) => (
-              <div key={index} className="mb-6 p-4 bg-green-50 rounded-lg shadow-md">
+              <div key={index} className="relative mb-6 p-4 bg-green-50 rounded-lg shadow-md">
+                {/* Conditional heading based on outlet ID */}
                 {subscription.outlet_id === null ? (
                   <h3 className="text-xl font-bold text-green-600">Main Branch: {subscription.title}</h3>
                 ) : (
                   <h3 className="text-xl font-bold text-green-600">Outlet #{subscription.outlet_id}: {subscription.title}</h3>
                 )}
+
                 <p className="text-gray-700">{subscription.description}</p>
                 <p>Duration: {subscription.duration} months</p>
                 <p>Distance Coverage: {subscription.distance_coverage} km</p>
@@ -266,7 +268,7 @@ const ViewSubscriptions = () => {
 
                 <p className="text-green-700">{calculateTimeLeft(subscription.expiration_date)}</p>
 
-                {/* Flex container for buttons */}
+                {/* Buttons section */}
                 <div className="flex justify-between mt-4">
                   {/* Button for renewing the subscription */}
                   <button
@@ -292,21 +294,19 @@ const ViewSubscriptions = () => {
                   >
                     Edit Subscription
                   </button>
-
-                  {/* Button for auto-renewal */}
-                  <button
-                    onClick={() => enableAutoRenew(subscription)}
-                    className="p-2 rounded bg-yellow-700 text-black hover:bg-yellow-800"
-                  >
-                    Enable Auto Renew
-                  </button>
-
                 </div>
 
-
+                {/* Enable Auto Renew button at the top right corner */}
+                <button
+                  onClick={() => enableAutoRenew(subscription)}
+                  className="absolute top-4 right-4 p-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm font-medium shadow-md hover:from-yellow-600 hover:to-yellow-700 transition duration-300 ease-in-out transform hover:scale-105"
+                >
+                  Enable Auto Renew
+                </button>
               </div>
             ))}
           </div>
+
         )}
       </div>
     </div>
