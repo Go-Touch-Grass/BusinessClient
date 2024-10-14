@@ -13,8 +13,8 @@ export interface Item {
     name: string;
     type: ItemType;
     filepath: string;
-    approved: boolean;
-    rejected: boolean;
+    status: string;
+    remarks:string;
     business_register_business?: {
         registration_id: number;
     };
