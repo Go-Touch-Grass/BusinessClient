@@ -8,12 +8,39 @@ import { useRouter } from 'next/router';
 import withAuth from './withAuth';
 import { useAuth } from "./AuthContext";
 import ConfirmationModal from '../components/Profile/confirmationModal';
+import { DataTable } from '@/components/components/global/DataTable';
+import { loadStripe } from "@stripe/stripe-js";
+import { ArrowUpDown } from 'lucide-react';
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { priceDetails } from "./gemPurchase";
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
-interface BusinessAccount {
+export type Transaction = {
+  currency_amount: string;
+  gems_added: number;
+  gems_deducted: number;
+  transaction_date: string;
+  transaction_id: number;
+};
+export interface BusinessAccount {
+
   firstName: string;
   lastName: string;
   email: string;
   username: string;
+  gem_balance: number;
+  min_gem_balance: number;
+  banStatus: boolean;
+  banRemarks: string;
+  transactions: Transaction[]
 }
 
 interface Outlet {
@@ -34,6 +61,77 @@ interface BusinessRegistration {
   proof?: string;
 }
 
+const transactionColumns: ColumnDef<Transaction>[] = [
+  {
+    accessorKey: "transaction_date",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ getValue }) => {
+      const dateValue = getValue() as string;
+      return dateValue.substring(0, 10); // Display only the first 5 characters
+    },
+  },
+
+  {
+    accessorKey: "currency_amount",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Currency Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
+  {
+    accessorKey: "gems_added",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Gems Added
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
+  {
+    accessorKey: "gems_deducted",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Gems Deducted
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ getValue }) => {
+      const value = getValue();
+      if (value == null) {
+        return 0;
+      }
+      return value;
+    },
+  },
+];
+
 const ProfilePage: React.FC = () => {
   const { isLoggedIn, setIsLoggedIn } = useAuth();
 
@@ -47,10 +145,15 @@ const ProfilePage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null); // For showing image preview
 
   const [formData, setFormData] = useState<BusinessAccount>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    username: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    username: "",
+    gem_balance: 0,
+    min_gem_balance: 0,
+    banStatus: false,
+    banRemarks: "",
+    transactions: []
   });
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null); // Store the selected outlet for deletion
   const [isOutletModalVisible, setIsOutletModalVisible] = useState<boolean>(false); // Modal for outlet deletion
@@ -484,7 +587,12 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
 
-
+        <hr className="flex my-10" />
+        <div className="space-y-6">
+          <b>Past Transactions</b>
+          <p>Current Gem Balance: {formData.gem_balance}</p>
+          {profile && <DataTable columns={transactionColumns} data={profile?.transactions} />}
+        </div>
         <div className='flex space-x-4'>
           <Button onClick={handleEditToggle}>
             {isEditing ? 'Cancel' : 'Edit Profile'}
