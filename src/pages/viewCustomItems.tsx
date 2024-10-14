@@ -40,17 +40,12 @@ const ViewCustomItems: React.FC = () => {
         router.push('/avatarManagement');
     };
 
-    const getApprovalStatus = (item: Item) => {
-        if (item.approved) return "Approved";
-        if (item.rejected) return "Rejected";
-        return "Pending";
-    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "Approved":
+            case "approved":
                 return "bg-green-100 text-green-800";
-            case "Rejected":
+            case "rejected":
                 return "bg-red-100 text-red-800";
             default:
                 return "bg-yellow-100 text-yellow-800";
@@ -58,8 +53,7 @@ const ViewCustomItems: React.FC = () => {
     };
 
     const renderItem = (item: Item) => {
-        const status = getApprovalStatus(item);
-        const statusColor = getStatusColor(status);
+        const status = getStatusColor(item.status);
 
         return (
             <div 
@@ -68,8 +62,8 @@ const ViewCustomItems: React.FC = () => {
                 onClick={() => handleItemClick(item)}
                 style={{ width: '210px', height: '300px' }}
             >
-                <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
-                    {status}
+                <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold ${status}`}>
+                    {item.status}
                 </div>
                 <Image
                     src={item.filepath}

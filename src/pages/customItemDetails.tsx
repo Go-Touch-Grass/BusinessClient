@@ -23,25 +23,18 @@ const CustomItemDetails: React.FC = () => {
         return <div>Loading...</div>;
     }
 
-    const getApprovalStatus = (item: Item) => {
-        if (item.approved) return "Approved";
-        if (item.rejected) return "Rejected";
-        return "Pending";
-    };
-
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "Approved":
+            case "approved":
                 return "text-green-600";
-            case "Rejected":
+            case "rejected":
                 return "text-red-600";
             default:
                 return "text-yellow-600";
         }
     };
 
-    const approvalStatus = getApprovalStatus(item);
-    const statusColor = getStatusColor(approvalStatus);
+    const statusColor = getStatusColor(item.status);
 
     return (
         <div className="container mx-auto p-6">
@@ -70,7 +63,8 @@ const CustomItemDetails: React.FC = () => {
                             <p><strong>Item Name:</strong> {item.name}</p>
                             <p><strong>Item Type:</strong> {item.type}</p>
                             <p><strong>Item ID:</strong> {item.id}</p>
-                            <p><strong>Status:</strong> <span className={`font-bold ${statusColor}`}>{approvalStatus}</span></p>
+                            <p><strong>Status:</strong> <span className={`font-bold ${statusColor}`}>{item.status}</span></p>
+                            {item.remarks.length > 1 && <p><strong>Remarks: </strong>{item.remarks}</p>}
                             <p><strong>Business Registration ID:</strong> {item.business_register_business?.registration_id ?? 'null'}</p>
                             <p><strong>Outlet ID:</strong> {item.outlet?.outlet_id ?? 'null'}</p>
                             <p><strong>Scale:</strong> {item.scale ?? 'null'}</p>
