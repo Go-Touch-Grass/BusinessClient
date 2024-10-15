@@ -197,11 +197,22 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     const recurringPayments = async (difference: number) => {
-      //auto charge card if more gems required
       console.log("amnt to top up: ", difference)
+      
+      // Find the index of the first price detail that covers the difference
       const index = priceDetails.findIndex(detail => detail.totalGems > difference);
-      const price = Number(priceDetails[index].price.substring(1))
-      const gems = priceDetails[index].totalGems
+      
+      // If no suitable price detail is found, use the last (largest) option
+      const priceDetail = index !== -1 ? priceDetails[index] : priceDetails[priceDetails.length - 1];
+      
+      if (!priceDetail) {
+        console.error("No suitable price detail found");
+        return;
+      }
+
+      const price = Number(priceDetail.price.substring(1))
+      const gems = priceDetail.totalGems
+
       try {
         const { clientSecret, paymentIntentId } = await api
           .post("/api/payment/create-payment-intent", {
@@ -249,7 +260,7 @@ const ProfilePage: React.FC = () => {
 
         }
       } catch (error) {
-        console.error("An error occurred during payment processing.");
+        console.error("An error occurred during payment processing:", error);
       }
     }
 
