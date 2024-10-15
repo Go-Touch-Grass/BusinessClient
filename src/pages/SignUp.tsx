@@ -68,7 +68,7 @@ const SignUpPage = () => {
         if (response.status === 201) {
           const { token } = response.data;
           // Store the token in a cookie
-          Cookies.set('authToken', token, { expires: 1 }); // Token expires in 1 day
+          Cookies.set('authToken', token, { expires: 10 }); // Token expires in 1 day
 
           setSuccess('Account created successfully!');
           //router.push('/Login');

@@ -16,6 +16,12 @@ interface Voucher {
     price: number;
     discount: number;
     voucherImage: string;
+    rewardItem: {
+        id: number;
+        name: string;
+        filepath: string;
+        status: string;
+    };
 }
 
 interface Outlet {
@@ -55,19 +61,32 @@ const VoucherList = () => {
     };
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchProfileAndVouchers = async () => {
             try {
                 const token = Cookies.get('authToken');
                 if (!token) {
                     setError('No token found. Please log in.');
                     return;
                 }
-                //const response = await api.get(`/api/business/profile/${username}`);
                 const response = await api.get(`/api/business/profile`);
                 if (response.status === 200) {
                     setOutlets(response.data.outlets);
                     setProfile(response.data.business)
-                    setBusinessRegistration(response.data.registeredBusiness); // Set the business registration data
+                    setBusinessRegistration(response.data.registeredBusiness);
+                    
+                    const branchOptions = [
+                        ...(response.data.registeredBusiness ? [`registration_${response.data.registeredBusiness.registration_id}`] : []),
+                        ...response.data.outlets.map((outlet: Outlet) => `outlet_${outlet.outlet_id}`)
+                    ];
+                    
+                    if (branchOptions.length === 1) {
+                        setSelectedBranch(branchOptions[0]);
+                        await fetchVouchers(branchOptions[0], '');
+                    } else if (branchOptions.length > 1) {
+                        // If there are multiple branches, select the first one and fetch its vouchers
+                        setSelectedBranch(branchOptions[0]);
+                        await fetchVouchers(branchOptions[0], '');
+                    }
                 } else {
                     setError(response.data.message || 'Failed to fetch profile');
                 }
@@ -77,20 +96,13 @@ const VoucherList = () => {
             }
         };
 
-        fetchProfile();
+        fetchProfileAndVouchers();
     }, []);
 
 
     const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
-        // Prevent selecting the "Select a Branch" option (empty value)
-        if (value === '') {
-            return;
-        }
-        setVouchers([]);  // Clear vouchers
-        setError('');     // Clear error message
         setSelectedBranch(value);
-        //fetchVouchers(value); // Fetch vouchers based on selected branch
         fetchVouchers(value, searchTerm);
     };
 
@@ -110,18 +122,10 @@ const VoucherList = () => {
             }
 
             response = await api.get(`/api/business/vouchers`, { params });
-            /*
-            if (branchId.startsWith('registration_')) {
-                const registrationId = branchId.split('_')[1];  // Extract the registration_id (for main business)
-                response = await api.get(`/api/business/vouchers?registration_id=${registrationId}`);
-            } else {
-                const outletId = branchId.split('_')[1]; // Extract the outlet_id
-                response = await api.get(`/api/business/vouchers?outlet_id=${outletId}`);
-            }*/
-
 
             if (response.status === 200) {
                 setVouchers(response.data.vouchers);
+                console.log(response.data.vouchers);
             } else if (response.status === 404) {
                 setVouchers([]);
                 setError('');  // Clear error for 404 case to show no voucher message.
@@ -272,25 +276,29 @@ const VoucherList = () => {
                 </Button>
             </div>
 
-            {/* Dropdown to select between main business and outlets */}
-            <Label htmlFor="branch-select">Select Branch: </Label>
-            <select id="branch-select" value={selectedBranch} onChange={handleBranchChange}>
-                <option value="">-- Select a Branch --</option>
-
-                {/* Main business option */}
-                {businessRegistration && (
-                    <option value={`registration_${businessRegistration.registration_id}`}>
-                        {businessRegistration.entityName} (Main Branch)
-                    </option>
-                )}
-
-                {/* Outlet options */}
-                {outlets.map((outlet) => (
-                    <option key={`outlet_${outlet.outlet_id}`} value={`outlet_${outlet.outlet_id}`}>
-                        {outlet.outlet_name} (Outlet)
-                    </option>
-                ))}
-            </select>
+            {/* Updated branch selection dropdown */}
+            {(businessRegistration || outlets.length > 0) && (
+                <div>
+                    <Label htmlFor="branch-select">Select Branch: </Label>
+                    <select 
+                        id="branch-select" 
+                        value={selectedBranch} 
+                        onChange={handleBranchChange}
+                        className="w-full p-2 border rounded"
+                    >
+                        {businessRegistration && (
+                            <option value={`registration_${businessRegistration.registration_id}`}>
+                                {businessRegistration.entityName} (Main Branch)
+                            </option>
+                        )}
+                        {outlets.map((outlet) => (
+                            <option key={`outlet_${outlet.outlet_id}`} value={`outlet_${outlet.outlet_id}`}>
+                                {outlet.outlet_name} (Outlet)
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             <div className="flex justify-between items-center space-y-4"></div>
 
@@ -314,21 +322,37 @@ const VoucherList = () => {
                                     key={voucher.listing_id}
                                     className="border rounded-lg shadow-lg p-4 bg-white"
                                 >
+                                    <h3 className="text-lg font-semibold mb-2">Voucher</h3>
                                     {voucher.voucherImage && (
                                         <img
-                                            src={(voucher.voucherImage ? `http://localhost:8080/${voucher.voucherImage}` : '/public/images/profile.png')}
+                                            src={`http://localhost:8080/${voucher.voucherImage}`}
                                             alt={voucher.name}
-                                            className="w-full h-48 object-cover mb-4 rounded"
+                                            className="w-full h-48 object-cover mb-2 rounded"
                                         />
                                     )}
-                                    <h3 className="text-xl font-semibold mb-2">{voucher.name}</h3>
-                                    <p className="text-gray-700 mb-2">{voucher.description}</p>
+                                    <h4 className="text-md font-semibold">Voucher Name: {voucher.name}</h4>
+                                    <p className="text-sm text-gray-600 mb-2">ID: {voucher.description}</p>
+                                    
                                     <p className="text-gray-900 font-bold mb-2">
                                         Price: <span className="line-through">${voucher.price}</span>{' '}
                                         <span className="text-green-500">${discountedPrice}</span>
                                     </p>
                                     <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
-                                    <div className="flex justify-between">
+                                    
+                                    {voucher.rewardItem && voucher.rewardItem.status === "approved" && (
+                                        <div className="mt-4">
+                                            <h3 className="text-lg font-semibold mb-2">Reward Item:</h3>
+                                            <img
+                                                src={voucher.rewardItem.filepath}
+                                                alt={voucher.rewardItem.name}
+                                                className="w-32 h-32 object-cover mb-2 rounded"
+                                            />
+                                            <h4 className="text-md font-semibold">{voucher.rewardItem.name}</h4>
+                                            <p className="text-sm text-gray-600 mb-2">ID: {voucher.rewardItem.id}</p>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="flex justify-between mt-4">
                                         <Button
                                             onClick={() => handleEdit(voucher)}
                                             variant="default"
@@ -336,8 +360,8 @@ const VoucherList = () => {
                                             Edit
                                         </Button>
                                         <Button
-                                            onClick={() => handleViewTransactions(voucher)} // New button to view transactions
-                                            variant="default" // Use the same variant as Edit button
+                                            onClick={() => handleViewTransactions(voucher)}
+                                            variant="default"
                                         >
                                             View Transactions
                                         </Button>
@@ -355,7 +379,6 @@ const VoucherList = () => {
                 ) : (
                     <p>No vouchers found.</p>
                 )}
-
             </div>
             </div>
         </div>

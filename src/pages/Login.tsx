@@ -32,12 +32,12 @@ const Login = () => {
 
           if (!isEmailVerified) {
             // Redirect to verify OTP if email not verified
-            Cookies.set('authToken', token, { expires: 1 });
+            Cookies.set('authToken', token, { expires: 10 });
             router.push('/verifyOTP');
           } else {
             // Proceed to profile if email is verified
             setSuccess('Login successful!');
-            Cookies.set('authToken', token, { expires: 1 });
+            Cookies.set('authToken', token, { expires: 10 });
             Cookies.set('username', usernameRef.current.value, {
               path: '/',
               expires: 7,

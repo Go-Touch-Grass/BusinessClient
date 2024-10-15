@@ -7,6 +7,8 @@ import { Button } from '../../../components/components/ui/button';
 import { Label } from '../../../components/components/ui/label';
 import { Textarea } from '../../../components/components/ui/textarea';
 import router from 'next/router';
+import { Item, getCustomItems } from "@/api/itemApi"; // Add this import
+import Image from 'next/image';
 
 const CreateVoucherPage = () => {
     const [name, setName] = useState('');
@@ -20,6 +22,8 @@ const CreateVoucherPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [imageFile, setImageFile] = useState<File | null>(null); // State for image file
+    const [customItems, setCustomItems] = useState<Item[]>([]);
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
     interface RegisteredBusiness {
         registration_id: number;
@@ -65,6 +69,21 @@ const CreateVoucherPage = () => {
         fetchData();
     }, []);
 
+    // Add a new useEffect to fetch custom items
+    useEffect(() => {
+        const fetchCustomItems = async () => {
+            try {
+                const items = await getCustomItems();
+                setCustomItems(items);
+            } catch (err) {
+                console.error('Error fetching custom items:', err);
+                setError('Failed to fetch custom items');
+            }
+        };
+
+        fetchCustomItems();
+    }, []);
+
     // Handle image selection
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -96,6 +115,9 @@ const CreateVoucherPage = () => {
             }
             if (imageFile) {
                 formData.append('voucherImage', imageFile); // Append the selected image file
+            }
+            if (selectedItemId) {
+                formData.append('reward_item_id', selectedItemId);
             }
 
             const token = Cookies.get('authToken');
@@ -202,6 +224,35 @@ const CreateVoucherPage = () => {
                     </div>
                 )}
                 <br /><br /><br /><br />
+
+                {/* Replace the dropdown with a visual picker */}
+                <div>
+                    <Label>Select Reward Item:</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2 p-2 mb-10">
+                        {customItems.map((item) => (
+                            <div
+                                key={item.id}
+                                className={`p-2 border rounded cursor-pointer ${
+                                    selectedItemId === item.id ? 'border-green-500 bg-green-100' : 'border-green-300'
+                                }`}
+                                onClick={() => setSelectedItemId(item.id)}
+                            >
+                                <div className="flex flex-col items-center">
+                                    <Image
+                                        src={item.filepath}
+                                        alt={item.name}
+                                        width={80}
+                                        height={80}
+                                        className="mb-2 rounded"
+                                    />
+                                    <p className="text-sm font-semibold text-center">{item.name}</p>
+                                    <p className="text-xs text-gray-600">{item.type}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 <Button onClick={handleSubmit}>Create Voucher</Button>
             </div>
         </div>

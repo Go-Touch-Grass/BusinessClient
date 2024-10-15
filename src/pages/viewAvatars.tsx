@@ -37,21 +37,10 @@ const ViewAvatars: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        fetchProfile();
+        fetchProfileAndAvatars();
     }, []);
 
-    useEffect(() => {
-        if (businessRegistration && outlets.length === 0) {
-            // Only business registration exists
-            fetchAvatarsByBusinessRegistrationId(businessRegistration.registration_id);
-        } else if (!businessRegistration && outlets.length === 1) {
-            // Only one outlet exists
-            setSelectedOutlet(outlets[0].outlet_id);
-            fetchAvatarsByOutletId(outlets[0].outlet_id);
-        }
-    }, [businessRegistration, outlets]);
-
-    const fetchProfile = async () => {
+    const fetchProfileAndAvatars = async () => {
         try {
             const token = Cookies.get('authToken');
             if (!token) {
@@ -63,6 +52,18 @@ const ViewAvatars: React.FC = () => {
             if (response.status === 200) {
                 setOutlets(response.data.outlets);
                 setBusinessRegistration(response.data.registeredBusiness);
+
+                // Determine which avatar to fetch
+                if (response.data.registeredBusiness) {
+                    await fetchAvatarsByBusinessRegistrationId(response.data.registeredBusiness.registration_id);
+                } else if (response.data.outlets.length === 1) {
+                    setSelectedOutlet(response.data.outlets[0].outlet_id);
+                    await fetchAvatarsByOutletId(response.data.outlets[0].outlet_id);
+                } else if (response.data.outlets.length > 1) {
+                    // If multiple outlets, select the first one
+                    setSelectedOutlet(response.data.outlets[0].outlet_id);
+                    await fetchAvatarsByOutletId(response.data.outlets[0].outlet_id);
+                }
             } else {
                 setError(response.data.message || 'Failed to fetch profile');
             }
