@@ -246,7 +246,7 @@ const VoucherList = () => {
     //console.log('error:', error);
     return (
         <div>
-            <h1>View Vouchers</h1>
+            <h1>Search Vouchers</h1>
 
             {/* Single Search Box */}
             <div className="flex space-x-4 mb-10">
@@ -305,7 +305,7 @@ const VoucherList = () => {
             {/* Display vouchers */}
             <br />
             <div className="container mx-auto">
-                <h1 className="text-2xl font-bold mb-6">Manage Vouchers</h1>
+                <h1 className="text-2xl font-bold mb-6 mt-10">Manage Vouchers</h1>
 
                 {Array.isArray(vouchers) && vouchers.length === 0 ? (
                     <p>No vouchers available.</p>
@@ -322,7 +322,7 @@ const VoucherList = () => {
                                     key={voucher.listing_id}
                                     className="border rounded-lg shadow-lg p-4 bg-white"
                                 >
-                                    <h3 className="text-lg font-semibold mb-2">Voucher</h3>
+                                    <h3 className="text-lg font-semibold mb-2">Voucher:</h3>
                                     {voucher.voucherImage && (
                                         <img
                                             src={`http://localhost:8080/${voucher.voucherImage}`}

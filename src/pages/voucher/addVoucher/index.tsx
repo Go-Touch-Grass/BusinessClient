@@ -24,6 +24,7 @@ const CreateVoucherPage = () => {
     const [imageFile, setImageFile] = useState<File | null>(null); // State for image file
     const [customItems, setCustomItems] = useState<Item[]>([]);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     interface RegisteredBusiness {
         registration_id: number;
@@ -92,10 +93,46 @@ const CreateVoucherPage = () => {
         }
     };
 
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+            newErrors.name = "Voucher name is required.";
+        }
+
+        if (!description.trim()) {
+            newErrors.description = "Description is required.";
+        }
+
+        if (price <= 0) {
+            newErrors.price = "Price must be greater than 0.";
+        }
+
+        if (discount < 0 || discount > 100) {
+            newErrors.discount = "Discount must be between 0% and 100%.";
+        }
+
+        if (duration <= 0) {
+            newErrors.duration = "Duration must be greater than 0.";
+        }
+
+        if (!imageFile) {
+            newErrors.image = "Voucher image is required.";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     // Handle voucher submission
     const handleSubmit = async () => {
         setError(null);
         setSuccess(null);
+
+        if (!validateForm()) {
+            setError("Please correct the errors in the form.");
+            return;
+        }
 
         try {
             if (!registeredBusiness) {
@@ -144,6 +181,10 @@ const CreateVoucherPage = () => {
         }
     };
 
+    const handleItemSelection = (itemId: string | null) => {
+        setSelectedItemId(prevId => prevId === itemId ? null : itemId);
+    };
+
     return (
         <div>
             <h1>Create a New Voucher</h1>
@@ -160,6 +201,7 @@ const CreateVoucherPage = () => {
                     placeholder="Enter voucher name"
                     required
                 />
+                {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
             </div>
 
             <div>
@@ -169,6 +211,7 @@ const CreateVoucherPage = () => {
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Enter voucher description"
                 />
+                {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
             </div>
 
             <div>
@@ -178,83 +221,90 @@ const CreateVoucherPage = () => {
                     value={price}
                     onChange={(e) => setPrice(parseFloat(e.target.value))}
                     placeholder="Enter voucher price"
+                    min="0"
                     required
                 />
+                {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
             </div>
 
             <div>
-                <Label>Discount to apply:</Label>
+                <Label>Discount Percentage:</Label>
                 <Input
                     type="number"
                     value={discount}
-                    onChange={(e) => setDiscount(parseFloat(e.target.value))}
-                    placeholder="Enter discount amount"
+                    onChange={(e) => setDiscount(Math.min(100, Math.max(0, parseFloat(e.target.value))))}
+                    placeholder="Enter discount percentage"
+                    min="0"
+                    max="100"
+                    step="0.1"
                 />
+                {errors.discount && <p className="text-red-500 text-sm">{errors.discount}</p>}
             </div>
 
-            {/* New field for voucher duration */}
             <div>
                 <Label>Duration (in days):</Label>
                 <Input
                     type="number"
                     value={duration}
                     onChange={(e) => setDuration(Number(e.target.value))}
-
                     placeholder="Enter duration in days"
+                    min="0"
                     required
                 />
-                <div>
-                    <Label>Voucher Image:</Label>
-                    <Input type="file" accept=".jpeg, .jpg, .png" onChange={handleImageChange} /> {/* Image upload input */}
-                </div>
-
-                {/* Conditionally render outlet selection if there are outlets */}
-                {outlets.length > 0 && (
-                    <div>
-                        <Label>Select Outlet (Listing would be added to Main Branch if not chosen):</Label>
-                        <br />
-                        <select value={selectedOutlet || ''} onChange={(e) => setSelectedOutlet(e.target.value)}>
-                            <option value="">-- Select an Outlet --</option>
-                            {outlets.map((outlet) => (
-                                <option key={outlet.outlet_id} value={outlet.outlet_id}>
-                                    {outlet.outlet_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                )}
-                <br /><br /><br /><br />
-
-                {/* Replace the dropdown with a visual picker */}
-                <div>
-                    <Label>Select Reward Item:</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2 p-2 mb-10">
-                        {customItems.map((item) => (
-                            <div
-                                key={item.id}
-                                className={`p-2 border rounded cursor-pointer ${
-                                    selectedItemId === item.id ? 'border-green-500 bg-green-100' : 'border-green-300'
-                                }`}
-                                onClick={() => setSelectedItemId(item.id)}
-                            >
-                                <div className="flex flex-col items-center">
-                                    <Image
-                                        src={item.filepath}
-                                        alt={item.name}
-                                        width={80}
-                                        height={80}
-                                        className="mb-2 rounded"
-                                    />
-                                    <p className="text-sm font-semibold text-center">{item.name}</p>
-                                    <p className="text-xs text-gray-600">{item.type}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <Button onClick={handleSubmit}>Create Voucher</Button>
+                {errors.duration && <p className="text-red-500 text-sm">{errors.duration}</p>}
             </div>
+
+            <div>
+                <Label>Voucher Image:</Label>
+                <Input type="file" accept=".jpeg, .jpg, .png" onChange={handleImageChange} />
+                {errors.image && <p className="text-red-500 text-sm">{errors.image}</p>}
+            </div>
+
+            {/* Conditionally render outlet selection if there are outlets */}
+            {outlets.length > 0 && (
+                <div>
+                    <Label>Select Outlet (Listing would be added to Main Branch if not chosen):</Label>
+                    <br />
+                    <select value={selectedOutlet || ''} onChange={(e) => setSelectedOutlet(e.target.value)}>
+                        <option value="">-- Select an Outlet --</option>
+                        {outlets.map((outlet) => (
+                            <option key={outlet.outlet_id} value={outlet.outlet_id}>
+                                {outlet.outlet_name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+            <br /><br /><br /><br />
+
+            {/* Replace the dropdown with a visual picker */}
+            <div>
+                <Label>Select Reward Item (Optional):</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2 p-2 mb-10">
+                    {customItems.map((item) => (
+                        <div
+                            key={item.id}
+                            className={`p-2 border rounded cursor-pointer ${selectedItemId === item.id ? 'border-green-500 bg-green-100' : 'border-green-300'
+                                }`}
+                            onClick={() => handleItemSelection(item.id)}
+                        >
+                            <div className="flex flex-col items-center">
+                                <Image
+                                    src={item.filepath}
+                                    alt={item.name}
+                                    width={80}
+                                    height={80}
+                                    className="mb-2 rounded"
+                                />
+                                <p className="text-sm font-semibold text-center">{item.name}</p>
+                                <p className="text-xs text-gray-600">{item.type}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <Button onClick={handleSubmit}>Create Voucher</Button>
         </div>
     );
 };
