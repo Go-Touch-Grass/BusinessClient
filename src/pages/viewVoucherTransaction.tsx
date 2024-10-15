@@ -14,9 +14,10 @@ interface Transaction {
     expirationDate: string;
     amountSpent: number;
     redeemed: boolean;
+    used?: boolean; // Make used optional for type safety
 }
 
-const ViewVoucherTransaction = () => {
+const ViewVoucherTransaction: React.FC = () => {
     const router = useRouter();
     const { listing_id } = router.query;
 
@@ -27,18 +28,30 @@ const ViewVoucherTransaction = () => {
     const [modalTitle, setModalTitle] = useState<string>('');
     const [modalMessage, setModalMessage] = useState<string>('');
     const [buttonLabel, setButtonLabel] = useState<string>('');
+    const [searchVoucherName, setSearchVoucherName] = useState<string>('');
+    const [searchDate, setSearchDate] = useState<string>('');
+    const [usedFilter, setUsedFilter] = useState<string>('all');
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-    const [searchVoucherName, setSearchVoucherName] = useState<string>(''); // Search for voucher name
-    const [searchDate, setSearchDate] = useState<string>(''); // Search for purchase date
-
+    // Fetch transactions from the API
     const fetchTransactions = async () => {
         if (listing_id) {
             try {
-                const response = await api.get(`/api/business/vouchers/${listing_id}/transactions`);
+                const response = await api.get(`/api/business/vouchers/${listing_id}/transactions`, {
+                    params: {
+                        used: usedFilter === 'all' ? undefined : usedFilter
+                    },
+                });
+
+                console.log("API Response:", response.data); // Add this line
                 if (response.status === 200) {
-                    setTransactions(response.data.transactions);
-                    setFilteredTransactions(response.data.transactions); // Initialize filteredTransactions
+                    // Ensure used property is defined
+                    const fetchedTransactions = response.data.transactions.map(transaction => ({
+                        ...transaction,
+                        used: transaction.used ?? false, // Default to false if undefined
+                    }));
+                    setTransactions(fetchedTransactions);
+                    setFilteredTransactions(fetchedTransactions);
                 } else {
                     setError('Failed to fetch transactions');
                 }
@@ -51,7 +64,7 @@ const ViewVoucherTransaction = () => {
 
     useEffect(() => {
         fetchTransactions();
-    }, [listing_id]);
+    }, [listing_id, usedFilter]);
 
     const filterTransactions = () => {
         let filtered = transactions;
@@ -75,24 +88,12 @@ const ViewVoucherTransaction = () => {
         filterTransactions();
     }, [searchVoucherName, searchDate, transactions]);
 
-    const validateVoucher = (transaction: Transaction) => {
-        const currentDate = new Date();
-        const expDate = new Date(transaction.expirationDate);
-
-        if (currentDate > expDate) {
-            setModalTitle('Voucher Expired');
-            setModalMessage('The voucher has expired.');
-            setButtonLabel('Dismiss');
-            setModalOpen(true);
-        } else {
-            setModalTitle('Voucher Valid');
-            setModalMessage('The voucher is valid. Do you want to redeem it?');
-            setButtonLabel('Redeem');
-            setSelectedTransaction(transaction);
-            setModalOpen(true);
-        }
+    // Handle modal close action
+    const handleModalClose = () => {
+        setModalOpen(false);
     };
 
+    // Handle modal button click action
     const handleModalButtonClick = async () => {
         if (selectedTransaction) {
             try {
@@ -122,6 +123,35 @@ const ViewVoucherTransaction = () => {
         }
     };
 
+    // Validate the voucher
+    const validateVoucher = (transaction: Transaction) => {
+        const currentDate = new Date();
+        const expirationDate = new Date(transaction.expirationDate);
+
+        // Check if the voucher is expired
+        if (currentDate > expirationDate) {
+            setModalTitle('Voucher Expired');
+            setModalMessage(`Voucher with ID ${transaction.id} has expired and cannot be redeemed.`);
+            setButtonLabel('Dismiss');
+            setModalOpen(true);
+        }
+        // Check if the voucher has already been redeemed
+        else if (transaction.used) {
+            setModalTitle('Voucher Already Redeemed');
+            setModalMessage(`Voucher with ID ${transaction.id} has already been redeemed.`);
+            setButtonLabel('Dismiss');
+            setModalOpen(true);
+        }
+        // If the voucher is valid and not redeemed, allow the user to redeem it
+        else {
+            setModalTitle('Voucher Valid');
+            setModalMessage(`Voucher with ID ${transaction.id} is valid. Do you want to redeem it?`);
+            setButtonLabel('Redeem');
+            setSelectedTransaction(transaction); // Store transaction for later use (e.g., for redeeming)
+            setModalOpen(true);
+        }
+    };
+
     return (
         <div className="container mx-auto px-4 py-10">
             <div className="bg-gray-50 shadow-lg rounded-lg p-8 mb-6">
@@ -130,7 +160,6 @@ const ViewVoucherTransaction = () => {
                 </h1>
                 {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
-                {/* Search bar for voucher name and date */}
                 <div className="mb-6 flex flex-col md:flex-row justify-between items-center">
                     <input
                         type="text"
@@ -145,15 +174,27 @@ const ViewVoucherTransaction = () => {
                         onChange={(e) => setSearchDate(e.target.value)}
                         className="border p-2 rounded w-full md:w-1/3"
                     />
+                    <select
+                        value={usedFilter}
+                        onChange={(e) => setUsedFilter(e.target.value)}
+                        className="border p-2 rounded w-full md:w-1/3"
+                    >
+                        <option value="all">All</option>
+                        <option value="true">Used</option>
+                        <option value="false">Not Used</option>
+                    </select>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredTransactions.length === 0 ? (
-                    <p className="text-center text-gray-500 col-span-full">No transactions found.</p>
-                ) : (
-                    filteredTransactions.map(transaction => (
-                        <div key={transaction.id} className="bg-white rounded-lg shadow-md transition-transform transform hover:scale-105 p-6">
+                {filteredTransactions.map(transaction => {
+                    console.log(`Transaction ID: ${transaction.id}, Redeemed: ${transaction.redeemed}, Used: ${transaction.used}`);
+
+                    return (
+                        <div
+                            key={transaction.id}
+                            className="bg-white rounded-lg shadow-md transition-transform transform hover:scale-105 p-6"
+                        >
                             <h2 className="text-xl font-bold text-gray-800 mb-2">Transaction ID: {transaction.id}</h2>
                             <p className="text-gray-600 mb-1"><strong>Voucher Name:</strong> {transaction.voucherName}</p>
                             <p className="text-gray-600 mb-1"><strong>Customer Name:</strong> {transaction.customerName}</p>
@@ -163,31 +204,36 @@ const ViewVoucherTransaction = () => {
                             </p>
                             <p className="text-gray-600 mb-1"><strong>Amount Spent:</strong> {transaction.amountSpent} Gems</p>
                             <p className={`text-gray-600 mb-1 ${transaction.redeemed ? 'text-green-600' : 'text-red-600'}`}>
-                                <strong>Redeemed By customer:</strong> {transaction.redeemed ? 'Yes' : 'No'}
+                                <strong>Redeemed By Customer:</strong> {transaction.redeemed ? 'Yes' : 'No'}
+                            </p>
+                            <p className={`text-gray-600 mb-1 ${transaction.used ? 'text-green-600' : 'text-red-600'}`}>
+                                <strong>Used By Customer:</strong> {transaction.used ? 'Yes' : 'No'}
                             </p>
 
-                            {transaction.redeemed && (
+                            {/* Button rendering logic */}
+                            {transaction.redeemed && !transaction.used ? (
                                 <button
-                                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+                                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                                     onClick={() => validateVoucher(transaction)}
                                 >
-                                    Validate
+                                    Validate Voucher
                                 </button>
-                            )}
+                            ) : null}
                         </div>
-                    ))
-                )}
+                    );
+                })}
             </div>
 
-            {/* Modal with a button inside */}
-            <Modal
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                title={modalTitle}
-                message={modalMessage}
-                buttonLabel={buttonLabel}
-                onButtonClick={handleModalButtonClick}
-            />
+            {modalOpen && (
+                <Modal
+                    isOpen={modalOpen}
+                    onClose={handleModalClose}
+                    title={modalTitle}
+                    message={modalMessage}
+                    buttonLabel={buttonLabel}
+                    onButtonClick={handleModalButtonClick}
+                />
+            )}
         </div>
     );
 };

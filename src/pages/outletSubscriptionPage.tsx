@@ -62,6 +62,7 @@ const OutletBusinessSubscription = () => {
             const response = await api.post(`/api/business/outlet/subscription/${username}/${outlet}`, payload);
 
             if (response.status === 201) {
+                await api.put(`/api/business/outlet/updateOutletHasSubscription/${outlet}`, { hasSubscriptionPlan: true });
                 setSuccessMessage('Subscription created successfully!');
                 router.push('/profile');
             } else {

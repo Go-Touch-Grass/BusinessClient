@@ -197,6 +197,11 @@ const ViewSubscriptions = () => {
           hasSubscriptionPlan: false,
         });
 
+        const updateOutletResponse = await api.put(`/api/business/outlet/updateOutletHasSubscription/${subscription.outlet_id}`, {
+          hasSubscriptionPlan: false,
+        });
+
+
         if (updateResponse.status === 200) {
           console.log('Subscription plan status updated to false');
         } else {
