@@ -156,7 +156,6 @@ const CreateVoucherPage = () => {
         setSuccess(null);
 
         if (!validateForm()) {
-            setError("Please correct the errors in the form.");
             return;
         }
 
