@@ -64,7 +64,7 @@ const CustomItemDetails: React.FC = () => {
                             <p><strong>Item Type:</strong> {item.type}</p>
                             <p><strong>Item ID:</strong> {item.id}</p>
                             <p><strong>Status:</strong> <span className={`font-bold ${statusColor}`}>{item.status}</span></p>
-                            {item.remarks.length > 1 && <p><strong>Remarks: </strong>{item.remarks}</p>}
+                            {item?.remarks?.length > 1 && <p><strong>Remarks: </strong>{item.remarks}</p>}
                             <p><strong>Business Registration ID:</strong> {item.business_register_business?.registration_id ?? 'null'}</p>
                             <p><strong>Outlet ID:</strong> {item.outlet?.outlet_id ?? 'null'}</p>
                             <p><strong>Scale:</strong> {item.scale ?? 'null'}</p>
