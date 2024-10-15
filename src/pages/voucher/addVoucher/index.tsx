@@ -25,6 +25,7 @@ const CreateVoucherPage = () => {
     const [customItems, setCustomItems] = useState<Item[]>([]);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [filteredItems, setFilteredItems] = useState<Item[]>([]);
 
     interface RegisteredBusiness {
         registration_id: number;
@@ -70,12 +71,15 @@ const CreateVoucherPage = () => {
         fetchData();
     }, []);
 
-    // Add a new useEffect to fetch custom items
+    // Modify the useEffect for fetching custom items
     useEffect(() => {
         const fetchCustomItems = async () => {
             try {
                 const items = await getCustomItems();
-                setCustomItems(items);
+                // Filter to only include approved items
+                const approvedItems = items.filter(item => item.status === "approved");
+                setCustomItems(approvedItems);
+                filterItemsByOutlet(approvedItems, selectedOutlet);
             } catch (err) {
                 console.error('Error fetching custom items:', err);
                 setError('Failed to fetch custom items');
@@ -84,6 +88,22 @@ const CreateVoucherPage = () => {
 
         fetchCustomItems();
     }, []);
+
+    // Add a new useEffect to handle filtering when the selected outlet changes
+    useEffect(() => {
+        const selectedOutletId = outlets.find(o => o.outlet_name === selectedOutlet)?.outlet_id || null;
+        filterItemsByOutlet(customItems, selectedOutletId);
+    }, [selectedOutlet, customItems, outlets]);
+
+    const filterItemsByOutlet = (items: Item[], outletId: string | null) => {
+        if (!outletId) {
+            // If no outlet is selected, show items with no outlet (main business items)
+            setFilteredItems(items.filter(item => !item.outlet));
+        } else {
+            // If an outlet is selected, show items for that specific outlet
+            setFilteredItems(items.filter(item => item.outlet && item.outlet.outlet_id === outletId));
+        }
+    };
 
     // Handle image selection
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,7 +168,10 @@ const CreateVoucherPage = () => {
             formData.append('duration', duration.toString());
             formData.append('business_id', registeredBusiness.registration_id.toString());
             if (selectedOutlet) {
-                formData.append('outlet_id', selectedOutlet);
+                const selectedOutletId = outlets.find(o => o.outlet_name === selectedOutlet)?.outlet_id;
+                if (selectedOutletId) {
+                    formData.append('outlet_id', selectedOutletId);
+                }
             }
             if (imageFile) {
                 formData.append('voucherImage', imageFile); // Append the selected image file
@@ -265,10 +288,13 @@ const CreateVoucherPage = () => {
                 <div>
                     <Label>Select Outlet (Listing would be added to Main Branch if not chosen):</Label>
                     <br />
-                    <select value={selectedOutlet || ''} onChange={(e) => setSelectedOutlet(e.target.value)}>
-                        <option value="">-- Select an Outlet --</option>
+                    <select 
+                        value={selectedOutlet || ''} 
+                        onChange={(e) => setSelectedOutlet(e.target.value || null)}
+                    >
+                        <option value="">-- Main Branch --</option>
                         {outlets.map((outlet) => (
-                            <option key={outlet.outlet_id} value={outlet.outlet_id}>
+                            <option key={outlet.outlet_id} value={outlet.outlet_name}>
                                 {outlet.outlet_name}
                             </option>
                         ))}
@@ -277,30 +303,34 @@ const CreateVoucherPage = () => {
             )}
             <br /><br /><br /><br />
 
-            {/* Replace the dropdown with a visual picker */}
+            {/* Update the reward item selection section */}
             <div>
                 <Label>Select Reward Item (Optional):</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2 p-2 mb-10">
-                    {customItems.map((item) => (
-                        <div
-                            key={item.id}
-                            className={`p-2 border rounded cursor-pointer ${selectedItemId === item.id ? 'border-green-500 bg-green-100' : 'border-green-300'
-                                }`}
-                            onClick={() => handleItemSelection(item.id)}
-                        >
-                            <div className="flex flex-col items-center">
-                                <Image
-                                    src={item.filepath}
-                                    alt={item.name}
-                                    width={80}
-                                    height={80}
-                                    className="mb-2 rounded"
-                                />
-                                <p className="text-sm font-semibold text-center">{item.name}</p>
-                                <p className="text-xs text-gray-600">{item.type}</p>
+                    {filteredItems.length > 0 ? (
+                        filteredItems.map((item) => (
+                            <div
+                                key={item.id}
+                                className={`p-2 border rounded cursor-pointer ${selectedItemId === item.id ? 'border-green-500 bg-green-100' : 'border-green-300'
+                                    }`}
+                                onClick={() => handleItemSelection(item.id)}
+                            >
+                                <div className="flex flex-col items-center">
+                                    <Image
+                                        src={item.filepath}
+                                        alt={item.name}
+                                        width={80}
+                                        height={80}
+                                        className="mb-2 rounded"
+                                    />
+                                    <p className="text-sm font-semibold text-center">{item.name}</p>
+                                    <p className="text-xs text-gray-600">{item.type}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        <p className="col-span-full text-center text-gray-500">No approved custom items available for this selection.</p>
+                    )}
                 </div>
             </div>
 
