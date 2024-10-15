@@ -52,10 +52,19 @@ const EditAvatar: React.FC = () => {
 	};
 
 	const handleSelectItem = (item: Item) => {
-		setCustomization((prev) => ({
-			...prev,
-			[item.type]: item,
-		}));
+		setCustomization((prev) => {
+			if (item.type === ItemType.BASE) {
+				// For base, always equip the new item
+				return { ...prev, [ItemType.BASE]: item };
+			} else {
+				// For other types, toggle between equipping and unequipping
+				const isEquipped = prev[item.type]?.id === item.id;
+				return {
+					...prev,
+					[item.type]: isEquipped ? null : item,
+				};
+			}
+		});
 	};
 
 	const handleBack = () => {
@@ -162,6 +171,7 @@ const EditAvatar: React.FC = () => {
 					selectedCategory={selectedCategory}
 					setSelectedCategory={setSelectedCategory}
 					handleSelectItem={handleSelectItem}
+					customization={customization}
 				/>
 			</div>
 
