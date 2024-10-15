@@ -26,6 +26,7 @@ const CreateVoucherPage = () => {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     interface RegisteredBusiness {
         registration_id: number;
@@ -109,7 +110,12 @@ const CreateVoucherPage = () => {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setImageFile(file); // Store the selected image file
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -194,6 +200,8 @@ const CreateVoucherPage = () => {
 
             if (response.status === 201) {
                 setSuccess('Voucher created successfully');
+                // Add browser alert
+                alert('Voucher created successfully!');
                 router.push('/voucher'); // Redirect to voucher listing page
             } else {
                 setError('Failed to create voucher');
@@ -281,11 +289,23 @@ const CreateVoucherPage = () => {
                 <Label>Voucher Image:</Label>
                 <Input type="file" accept=".jpeg, .jpg, .png" onChange={handleImageChange} />
                 {errors.image && <p className="text-red-500 text-sm">{errors.image}</p>}
+                {imagePreview && (
+                    <div className="mt-5">
+                        <p>Voucher Image Preview:</p>
+                        <Image
+                            src={imagePreview}
+                            alt="Voucher preview"
+                            width={200}
+                            height={200}
+                            className="object-contain"
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Conditionally render outlet selection if there are outlets */}
             {outlets.length > 0 && (
-                <div>
+                <div className='mt-10'>
                     <Label>Select Outlet (Listing would be added to Main Branch if not chosen):</Label>
                     <br />
                     <select 
@@ -301,10 +321,10 @@ const CreateVoucherPage = () => {
                     </select>
                 </div>
             )}
-            <br /><br /><br /><br />
+            {/* <br /><br /><br /><br /> */}
 
             {/* Update the reward item selection section */}
-            <div>
+            <div className='mt-10'>
                 <Label>Select Reward Item (Optional):</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2 p-2 mb-10">
                     {filteredItems.length > 0 ? (
