@@ -14,7 +14,7 @@ interface Transaction {
     expirationDate: string;
     amountSpent: number;
     redeemed: boolean;
-    used: boolean;
+    used?: boolean; // Make used optional for type safety
 }
 
 const ViewVoucherTransaction: React.FC = () => {
@@ -40,12 +40,18 @@ const ViewVoucherTransaction: React.FC = () => {
                 const response = await api.get(`/api/business/vouchers/${listing_id}/transactions`, {
                     params: {
                         used: usedFilter === 'all' ? undefined : usedFilter
-                    }
-                    ,
+                    },
                 });
+
+                console.log("API Response:", response.data); // Add this line
                 if (response.status === 200) {
-                    setTransactions(response.data.transactions);
-                    setFilteredTransactions(response.data.transactions);
+                    // Ensure used property is defined
+                    const fetchedTransactions = response.data.transactions.map(transaction => ({
+                        ...transaction,
+                        used: transaction.used ?? false, // Default to false if undefined
+                    }));
+                    setTransactions(fetchedTransactions);
+                    setFilteredTransactions(fetchedTransactions);
                 } else {
                     setError('Failed to fetch transactions');
                 }
@@ -117,7 +123,6 @@ const ViewVoucherTransaction: React.FC = () => {
         }
     };
 
-
     // Validate the voucher
     const validateVoucher = (transaction: Transaction) => {
         const currentDate = new Date();
@@ -136,7 +141,6 @@ const ViewVoucherTransaction: React.FC = () => {
             setModalMessage(`Voucher with ID ${transaction.id} has already been redeemed.`);
             setButtonLabel('Dismiss');
             setModalOpen(true);
-
         }
         // If the voucher is valid and not redeemed, allow the user to redeem it
         else {
@@ -147,8 +151,6 @@ const ViewVoucherTransaction: React.FC = () => {
             setModalOpen(true);
         }
     };
-
-
 
     return (
         <div className="container mx-auto px-4 py-10">
@@ -185,10 +187,10 @@ const ViewVoucherTransaction: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredTransactions.length === 0 ? (
-                    <p className="text-center text-gray-500 col-span-full">No transactions found.</p>
-                ) : (
-                    filteredTransactions.map(transaction => (
+                {filteredTransactions.map(transaction => {
+                    console.log(`Transaction ID: ${transaction.id}, Redeemed: ${transaction.redeemed}, Used: ${transaction.used}`);
+
+                    return (
                         <div
                             key={transaction.id}
                             className="bg-white rounded-lg shadow-md transition-transform transform hover:scale-105 p-6"
@@ -202,21 +204,24 @@ const ViewVoucherTransaction: React.FC = () => {
                             </p>
                             <p className="text-gray-600 mb-1"><strong>Amount Spent:</strong> {transaction.amountSpent} Gems</p>
                             <p className={`text-gray-600 mb-1 ${transaction.redeemed ? 'text-green-600' : 'text-red-600'}`}>
-                                <strong>Redeemed By customer:</strong> {transaction.redeemed ? 'Yes' : 'No'}
+                                <strong>Redeemed By Customer:</strong> {transaction.redeemed ? 'Yes' : 'No'}
+                            </p>
+                            <p className={`text-gray-600 mb-1 ${transaction.used ? 'text-green-600' : 'text-red-600'}`}>
+                                <strong>Used By Customer:</strong> {transaction.used ? 'Yes' : 'No'}
                             </p>
 
-                            {!transaction.used && !transaction.redeemed && (
+                            {/* Button rendering logic */}
+                            {transaction.redeemed && !transaction.used ? (
                                 <button
                                     className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                                     onClick={() => validateVoucher(transaction)}
                                 >
                                     Validate Voucher
                                 </button>
-                            )}
+                            ) : null}
                         </div>
-                    ))
-                )}
-
+                    );
+                })}
             </div>
 
             {modalOpen && (

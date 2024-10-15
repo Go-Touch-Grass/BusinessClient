@@ -49,6 +49,7 @@ interface Outlet {
   contact: string;
   description: string;
   outlet_id: number;
+  hasSubscriptionPlan: boolean;
 }
 
 interface BusinessRegistration {
@@ -629,7 +630,7 @@ const ProfilePage: React.FC = () => {
               onClose={() => setIsOutletModalVisible(false)}
               onConfirm={handleConfirmDeleteOutlet}
               outletContact={selectedOutlet?.contact || ''}
-              confirmationType="contact" // Specify that this modal should collect contact number
+              confirmationType="contact"
             />
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               {outlets.length === 0 ? (
@@ -655,12 +656,16 @@ const ProfilePage: React.FC = () => {
                       <Button onClick={() => handleDeleteOutlet(outlet)} className='bg-red-500 hover:bg-red-600'>Delete Outlet</Button>
                     </div>
 
-                    <div className=' flex justify-end mt-4'>
+                    <div className='flex justify-end mt-4'>
+                      {/* Create Subscription Plan Button, disabled if outlet.hasSubscriptionPlan is true */}
                       <Button
-                        className='bg-blue-500 hover:bg-blue-600 text-white'
+                        className={`${outlet.hasSubscriptionPlan
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-blue-500 hover:bg-blue-600'} text-white`}
                         onClick={() => router.push(`/outletSubscriptionPage?outlet=${outlet.outlet_id}`)}
+                        disabled={outlet.hasSubscriptionPlan}
                       >
-                        Create Subscription Plan
+                        {outlet.hasSubscriptionPlan ? 'Subscription Active' : 'Create Subscription Plan'}
                       </Button>
                     </div>
                   </div>
