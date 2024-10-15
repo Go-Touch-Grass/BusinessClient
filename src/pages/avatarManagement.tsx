@@ -118,7 +118,7 @@ const AvatarManagement: React.FC = () => {
 				</div>
 				<div className="flex justify-center space-x-4">
 					<Button onClick={handleCustomAvatar}>
-						Upload Custom Avatar
+						Upload Custom Avatar Base
 					</Button>
 					<Button onClick={handleCustomItem}>
 						Upload Custom Item
