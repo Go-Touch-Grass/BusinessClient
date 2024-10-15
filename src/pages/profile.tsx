@@ -59,6 +59,7 @@ interface BusinessRegistration {
   status: string;
   remarks: string;
   proof?: string;
+  hasSubscriptionPlan: boolean;
 }
 
 const transactionColumns: ColumnDef<Transaction>[] = [
@@ -206,8 +207,10 @@ const ProfilePage: React.FC = () => {
             amount: price * 100, // in cents
             currency: "sgd",
           })
-          .then((response) => {console.log("paymentintent ", response.data) 
-            return (response.data)});
+          .then((response) => {
+            console.log("paymentintent ", response.data)
+            return (response.data)
+          });
 
         if (!clientSecret || !paymentIntentId) {
           console.error("Error creating payment intent");
@@ -217,8 +220,10 @@ const ProfilePage: React.FC = () => {
         // Check if the user has a saved payment method
         const { paymentMethodId } = await api
           .get("/api/payment/get-payment-method-id")
-          .then((response) => {console.log("payment method id,", response.data) 
-            return (response.data)});
+          .then((response) => {
+            console.log("payment method id,", response.data)
+            return (response.data)
+          });
 
         if (paymentMethodId) {
           // Use saved payment method
@@ -239,15 +244,15 @@ const ProfilePage: React.FC = () => {
             console.log("Payment and top-up succeeded!");
           }
         } else {
-         console.error("payment method missing id")
+          console.error("payment method missing id")
 
         }
       } catch (error) {
         console.error("An error occurred during payment processing.");
-      } 
+      }
     }
 
-    if (profile && profile?.gem_balance < profile?.min_gem_balance){
+    if (profile && profile?.gem_balance < profile?.min_gem_balance) {
       const difference = profile?.min_gem_balance - profile?.gem_balance
       recurringPayments(difference)
     }
@@ -281,6 +286,7 @@ const ProfilePage: React.FC = () => {
       //const response = await api.put(`/api/business/profile/${username}`, formData);
       const response = await api.put(`/api/business/profile`, formData);
       if (response.status === 200) {
+
         setProfile(formData);
         setIsEditing(false);
         setError(null);
@@ -533,131 +539,135 @@ const ProfilePage: React.FC = () => {
               <div>Please resolve the above issues to proceed further.</div>
             </div>
           )}
-        <div className='space-y-6'>
-          <div className='flex justify-between items-center'>
-            <h2 className='text-lg font-semibold'>Business Registration</h2>
-            <Button
-              className={`${businessRegistration?.status == 'approved' || businessRegistration?.status == 'pending'
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-green-500 hover:bg-green-600'
-                } text-white`}
-              onClick={() => router.push('/registerBusiness')}
-              disabled={businessRegistration?.status == 'pending' || businessRegistration?.status == 'approved'}  // Disable 
-            >
-              + Register New Business
-            </Button>
-          </div>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            {!businessRegistration ? (
-              <p>No business registration found.</p>
-            ) : (
-              <div key={businessRegistration.entityName} className='border p-4 rounded-lg'>
-
-                <div className='flex justify-between items-center mb-10'>
-                  <h3 className='text-xl font-semibold'>{businessRegistration.entityName}</h3>
-                  {/* Edit Outlet Button */}
-                  <Button
-                    onClick={() => router.push(`/editRegisterBusiness?registrationId=${businessRegistration.registration_id}`)}
-                    className='bg-green-500 hover:bg-green-600 text-white'
-                  >
-                    Edit
-                  </Button>
-                </div>
-                <p><strong>Location:</strong> {businessRegistration.location}</p>
-                <p><strong>Category:</strong> {businessRegistration.category}</p>
-                <p><strong>Status:</strong> {businessRegistration.status}</p>
-                <p><strong>Remarks:</strong> {businessRegistration.remarks}</p>
-                {businessRegistration.proof && (
-                  <a href={`http://localhost:8080/${businessRegistration.proof}`} target="_blank" rel="noopener noreferrer">
-                    View Proof {/* noopener: prevents new page from accessing or controlling original page. 
-                                                       noreferrer: prevents sending of origin URL to the external site.*/}
-                  </a>
-                )}
-
-                <div className='mt-4 flex justify-end'>
-                  <Button
-                    className='bg-blue-500 hover:bg-blue-600 text-white'
-                    onClick={() => router.push('/subscriptionPage')}
-                    disabled={businessRegistration?.status === 'pending'
-
-                    }
-                  >
-                    Create Subscription Plan
-                  </Button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        <div className='space-y-6'>
-          <div className='flex justify-between items-center'>
-            <h2 className='text-lg font-semibold'>Your Outlets</h2>
-
-            {/* Existing Add Outlet Button */}
-            <Button
-              className={`${businessRegistration?.status === 'approved'
-                ? 'bg-green-500 hover:bg-green-600'
-                : 'bg-gray-300 cursor-not-allowed'
-                } text-white`}
-              onClick={() => router.push('/addOutlet')}
-              disabled={businessRegistration?.status !== 'approved'}
-            >
-              + Add New Outlet
-            </Button>
-          </div>
-
-          {/* Display reason why the button is disabled */}
-          {businessRegistration?.status !== 'approved' && (
-            <p className="text-sm text-gray-500">
-              You cannot add an outlet because your business registration is currently <strong>{businessRegistration?.status}</strong>.
-            </p>
-          )}
-          <ConfirmationModal
-            isVisible={isOutletModalVisible}
-            onClose={() => setIsOutletModalVisible(false)}
-            onConfirm={handleConfirmDeleteOutlet}
-            outletContact={selectedOutlet?.contact || ''}
-            confirmationType="contact" // Specify that this modal should collect contact number
-          />
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            {outlets.length === 0 ? (
-              <p>No outlets found.</p>
-            ) : (
-              outlets.map(outlet => (
-                <div key={outlet.outlet_name} className='border p-4 rounded-lg'>
+          <div className='space-y-6'>
+            <div className='flex justify-between items-center'>
+              <h2 className='text-lg font-semibold'>Business Registration</h2>
+              <Button
+                className={`${businessRegistration?.status == 'approved' || businessRegistration?.status == 'pending'
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600'
+                  } text-white`}
+                onClick={() => router.push('/registerBusiness')}
+                disabled={businessRegistration?.status == 'pending' || businessRegistration?.status == 'approved'}  // Disable 
+              >
+                + Register New Business
+              </Button>
+            </div>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              {!businessRegistration ? (
+                <p>No business registration found.</p>
+              ) : (
+                <div key={businessRegistration.entityName} className='border p-4 rounded-lg'>
 
                   <div className='flex justify-between items-center mb-10'>
-                    <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
+                    <h3 className='text-xl font-semibold'>{businessRegistration.entityName}</h3>
                     {/* Edit Outlet Button */}
                     <Button
-                      onClick={() => router.push(`/editOutlet?outletId=${outlet.outlet_id}`)}
+                      onClick={() => router.push(`/editRegisterBusiness?registrationId=${businessRegistration.registration_id}`)}
                       className='bg-green-500 hover:bg-green-600 text-white'
                     >
-                      Edit Outlet
+                      Edit
                     </Button>
                   </div>
-                  <p><strong>Location:</strong> {outlet.location}</p>
-                  <p><strong>Contact:</strong> {outlet.contact}</p>
-                  <p><strong>Description:</strong> {outlet.description}</p>
-                  <div className='flex justify-end mt-4'> {/* Align to right */}
-                    <Button onClick={() => handleDeleteOutlet(outlet)} className='bg-red-500 hover:bg-red-600'>Delete Outlet</Button>
-                  </div>
+                  <p><strong>Location:</strong> {businessRegistration.location}</p>
+                  <p><strong>Category:</strong> {businessRegistration.category}</p>
+                  <p><strong>Status:</strong> {businessRegistration.status}</p>
+                  <p><strong>Remarks:</strong> {businessRegistration.remarks}</p>
+                  {businessRegistration.proof && (
+                    <a href={`http://localhost:8080/${businessRegistration.proof}`} target="_blank" rel="noopener noreferrer">
+                      View Proof {/* noopener: prevents new page from accessing or controlling original page. 
+                                                       noreferrer: prevents sending of origin URL to the external site.*/}
+                    </a>
+                  )}
 
-                  <div className=' flex justify-end mt-4'>
+                  <div className='mt-4 flex justify-end'>
                     <Button
-                      className='bg-blue-500 hover:bg-blue-600 text-white'
-                      onClick={() => router.push(`/outletSubscriptionPage?outlet=${outlet.outlet_id}`)}
+                      className={`${businessRegistration?.status === 'approved' && !businessRegistration?.hasSubscriptionPlan
+                        ? 'bg-blue-500 hover:bg-blue-600'
+                        : 'bg-gray-300 cursor-not-allowed'
+                        } text-white`}
+                      onClick={() => router.push('/subscriptionPage')}
+                      disabled={
+                        businessRegistration?.status === 'pending' ||
+                        (businessRegistration?.status === 'approved' && businessRegistration?.hasSubscriptionPlan)
+                      }
                     >
                       Create Subscription Plan
                     </Button>
                   </div>
                 </div>
-              ))
-            )}
+              )}
+
+            </div>
           </div>
-        </div>
+
+          <div className='space-y-6'>
+            <div className='flex justify-between items-center'>
+              <h2 className='text-lg font-semibold'>Your Outlets</h2>
+
+              {/* Existing Add Outlet Button */}
+              <Button
+                className={`${businessRegistration?.status === 'approved'
+                  ? 'bg-green-500 hover:bg-green-600'
+                  : 'bg-gray-300 cursor-not-allowed'
+                  } text-white`}
+                onClick={() => router.push('/addOutlet')}
+                disabled={businessRegistration?.status !== 'approved'}
+              >
+                + Add New Outlet
+              </Button>
+            </div>
+
+            {/* Display reason why the button is disabled */}
+            {businessRegistration?.status !== 'approved' && (
+              <p className="text-sm text-gray-500">
+                You cannot add an outlet because your business registration is currently <strong>{businessRegistration?.status}</strong>.
+              </p>
+            )}
+            <ConfirmationModal
+              isVisible={isOutletModalVisible}
+              onClose={() => setIsOutletModalVisible(false)}
+              onConfirm={handleConfirmDeleteOutlet}
+              outletContact={selectedOutlet?.contact || ''}
+              confirmationType="contact" // Specify that this modal should collect contact number
+            />
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              {outlets.length === 0 ? (
+                <p>No outlets found.</p>
+              ) : (
+                outlets.map(outlet => (
+                  <div key={outlet.outlet_name} className='border p-4 rounded-lg'>
+
+                    <div className='flex justify-between items-center mb-10'>
+                      <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
+                      {/* Edit Outlet Button */}
+                      <Button
+                        onClick={() => router.push(`/editOutlet?outletId=${outlet.outlet_id}`)}
+                        className='bg-green-500 hover:bg-green-600 text-white'
+                      >
+                        Edit Outlet
+                      </Button>
+                    </div>
+                    <p><strong>Location:</strong> {outlet.location}</p>
+                    <p><strong>Contact:</strong> {outlet.contact}</p>
+                    <p><strong>Description:</strong> {outlet.description}</p>
+                    <div className='flex justify-end mt-4'> {/* Align to right */}
+                      <Button onClick={() => handleDeleteOutlet(outlet)} className='bg-red-500 hover:bg-red-600'>Delete Outlet</Button>
+                    </div>
+
+                    <div className=' flex justify-end mt-4'>
+                      <Button
+                        className='bg-blue-500 hover:bg-blue-600 text-white'
+                        onClick={() => router.push(`/outletSubscriptionPage?outlet=${outlet.outlet_id}`)}
+                      >
+                        Create Subscription Plan
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         <hr className="flex my-10" />

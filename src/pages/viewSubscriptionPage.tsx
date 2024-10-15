@@ -187,9 +187,21 @@ const ViewSubscriptions = () => {
 
 
       if (response.status === 200) {
+
         setSubscriptions((prevSubscriptions) =>
           prevSubscriptions.filter((sub) => sub.outlet_id !== subscription.outlet_id)
         );
+
+        // Now, update the `hasSubscriptionPlan` to false
+        const updateResponse = await api.put(`/api/business/updateHasSubscription/${username}`, {
+          hasSubscriptionPlan: false,
+        });
+
+        if (updateResponse.status === 200) {
+          console.log('Subscription plan status updated to false');
+        } else {
+          console.error('Failed to update subscription plan status');
+        }
       }
     } catch (err) {
       console.error('End subscription error:', err);
