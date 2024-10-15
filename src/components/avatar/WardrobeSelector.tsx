@@ -8,13 +8,20 @@ interface WardrobeSelectorProps {
     selectedCategory: ItemType | "";
     setSelectedCategory: (category: ItemType) => void;
     handleSelectItem: (item: Item) => void;
+    customization: {
+        [ItemType.BASE]: Item | null;
+        [ItemType.HAT]: Item | null;
+        [ItemType.SHIRT]: Item | null;
+        [ItemType.BOTTOM]: Item | null;
+    };
 }
 
 const WardrobeSelector: React.FC<WardrobeSelectorProps> = ({
     items,
     selectedCategory,
     setSelectedCategory,
-    handleSelectItem
+    handleSelectItem,
+    customization
 }) => {
     const renderWardrobeItems = () => {
         const filteredItems = items.filter(
@@ -27,7 +34,7 @@ const WardrobeSelector: React.FC<WardrobeSelectorProps> = ({
                     <div
                         key={item.id}
                         onClick={() => handleSelectItem(item)}
-                        className="cursor-pointer"
+                        className={`cursor-pointer ${customization[item.type]?.id === item.id ? 'border-2 border-green-500' : ''}`}
                     >
                         <Image
                             src={item.filepath}
