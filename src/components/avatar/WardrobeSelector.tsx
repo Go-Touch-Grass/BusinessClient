@@ -29,7 +29,7 @@ const WardrobeSelector: React.FC<WardrobeSelectorProps> = ({
         );
 
         return (
-            <div className="flex space-x-4 overflow-x-auto">
+            <div className="flex flex-wrap gap-4">
                 {filteredItems.map((item) => (
                     <div
                         key={item.id}
@@ -78,7 +78,7 @@ const WardrobeSelector: React.FC<WardrobeSelectorProps> = ({
                 </Button>
             </div>
 
-            <div className="w-full overflow-x-auto flex justify-center">
+            <div className="w-full overflow-y-auto max-h-64">
                 {renderWardrobeItems()}
             </div>
         </div>
