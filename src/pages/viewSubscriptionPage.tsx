@@ -185,32 +185,43 @@ const ViewSubscriptions = () => {
         },
       });
 
-
       if (response.status === 200) {
-
+        // Remove the subscription from the local state
         setSubscriptions((prevSubscriptions) =>
-          prevSubscriptions.filter((sub) => sub.outlet_id !== subscription.outlet_id)
+          prevSubscriptions.filter((sub) => sub.subscription_id !== subscription.subscription_id)
         );
 
-        // Now, update the `hasSubscriptionPlan` to false
+        // Update the hasSubscriptionPlan for the business account
         const updateResponse = await api.put(`/api/business/updateHasSubscription/${username}`, {
           hasSubscriptionPlan: false,
         });
 
-        const updateOutletResponse = await api.put(`/api/business/outlet/updateOutletHasSubscription/${subscription.outlet_id}`, {
-          hasSubscriptionPlan: false,
-        });
-
-
         if (updateResponse.status === 200) {
-          console.log('Subscription plan status updated to false');
+          console.log('Business account subscription plan status updated to false');
         } else {
-          console.error('Failed to update subscription plan status');
+          console.error('Failed to update business account subscription plan status');
         }
+
+        // Update the hasSubscriptionPlan for the outlet
+        if (subscription.outlet_id !== null) {
+          const updateOutletResponse = await api.put(`/api/business/outlet/updateOutletHasSubscription/${subscription.outlet_id}`, {
+            hasSubscriptionPlan: false,
+          });
+
+          if (updateOutletResponse.status === 200) {
+            console.log('Outlet subscription plan status updated to false');
+          } else {
+            console.error('Failed to update outlet subscription plan status');
+          }
+        }
+
+        alert('Subscription ended successfully');
+      } else {
+        setEndError('Failed to end subscription');
       }
     } catch (err) {
       console.error('End subscription error:', err);
-      setEndError('Error ending subscription');
+      // setEndError('Error ending subscription');
     }
   };
 

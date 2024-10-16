@@ -35,7 +35,7 @@ const OutletBusinessSubscription = () => {
         setSuccessMessage(null);
 
         try {
-            const username = Cookies.get('username'); // Get username from cookies
+            const username = Cookies.get('username');
             if (!username) {
                 setError('No username found in cookies');
                 return;
@@ -46,7 +46,6 @@ const OutletBusinessSubscription = () => {
                 return;
             }
 
-
             const payload = {
                 duration,
                 distance_coverage,
@@ -54,7 +53,6 @@ const OutletBusinessSubscription = () => {
                 total_gem,
                 title: `${duration} Month Plan`,
                 description: `Subscription for ${duration} month(s) with ${distance_coverage} km coverage.`,
-                outletId: outlet as string,
             };
 
             console.log('Request Payload:', payload);
@@ -62,15 +60,21 @@ const OutletBusinessSubscription = () => {
             const response = await api.post(`/api/business/outlet/subscription/${username}/${outlet}`, payload);
 
             if (response.status === 201) {
-                await api.put(`/api/business/outlet/updateOutletHasSubscription/${outlet}`, { hasSubscriptionPlan: true });
                 setSuccessMessage('Subscription created successfully!');
-                router.push('/profile');
+                // Route to the subscription page after a short delay
+                setTimeout(() => {
+                    router.push('/viewSubscriptionPage');
+                }, 1500);
             } else {
                 setError(`Failed to create subscription: ${response.data.message || 'Unknown error'}`);
             }
         } catch (err) {
             console.error('Error submitting form:', err);
-            setError('An error occurred while submitting. Please try again.');
+            if (err.response && err.response.data && err.response.data.message) {
+                setError(`Error: ${err.response.data.message}`);
+            } else {
+                setError('An error occurred while submitting. Please try again.');
+            }
         } finally {
             setLoading(false);
         }

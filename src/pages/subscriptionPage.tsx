@@ -57,7 +57,10 @@ const BusinessSubscription = () => {
             if (response.status === 201) {
                 await api.put(`/api/business/updateHasSubscription/${username}`, { hasSubscriptionPlan: true });
                 setSuccessMessage('Subscription created successfully!');
-                router.push('/profile');
+                // Route to the subscription page after a short delay
+                setTimeout(() => {
+                    router.push('/viewSubscriptionPage');
+                }, 0);
             } else {
                 setError(`Failed to create subscription: ${response.data.message || 'Unknown error'}`);
             }

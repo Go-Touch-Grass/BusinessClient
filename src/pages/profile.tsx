@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/api';
 import { Label } from '../components/components/ui/label';
 import { Input } from '../components/components/ui/input';
@@ -49,7 +49,6 @@ interface Outlet {
   contact: string;
   description: string;
   outlet_id: number;
-  hasSubscriptionPlan: boolean;
 }
 
 interface BusinessRegistration {
@@ -60,7 +59,27 @@ interface BusinessRegistration {
   status: string;
   remarks: string;
   proof?: string;
-  hasSubscriptionPlan: boolean;
+}
+
+// Update the Subscription interface
+interface Subscription {
+  subscription_id: number;
+  title: string;
+  description: string;
+  activation_date: string;
+  autoRenew: boolean;
+  distance_coverage: number;
+  duration: number;
+  expiration_date: string;
+  outlet: {
+    outlet_id: number;
+    outlet_name: string;
+    location: string;
+  } | null;
+  outlet_id: number | null;
+  status: string;
+  total_cost: string;
+  total_gem: string;
 }
 
 const transactionColumns: ColumnDef<Transaction>[] = [
@@ -164,6 +183,41 @@ const ProfilePage: React.FC = () => {
   const stripe = useStripe();
   const elements = useElements();
 
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+
+  const fetchSubscriptions = useCallback(async () => {
+    if (!isLoggedIn) {
+      setError('User is not logged in');
+      return;
+    }
+
+    try {
+      const username = Cookies.get('username');
+      if (!username) {
+        setError('No username found in cookies');
+        return;
+      }
+
+      const response = await api.get(`/api/business/subscription/${username}`, {
+        headers: {
+          'Authorization': `Bearer ${Cookies.get('authToken')}` // Include the auth token
+        }
+      });
+
+      if (response.status === 200) {
+        setSubscriptions(response.data.subscriptions);
+        console.log("subscriptions", response.data.subscriptions)
+      }
+    } catch (err) {
+      console.error('Error fetching subscriptions:', err);
+      if (err.response && err.response.status === 401) {
+        setError('Authentication failed. Please log in again.');
+      } else {
+        setError('Failed to fetch subscriptions');
+      }
+    }
+  }, [isLoggedIn]);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -193,7 +247,8 @@ const ProfilePage: React.FC = () => {
     };
 
     fetchProfile();
-  }, []);
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
 
   useEffect(() => {
     const recurringPayments = async (difference: number) => {
@@ -458,6 +513,33 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleCreateOutletSubscription = async (outletId: number) => {
+    if (!isLoggedIn) {
+      setError('User is not logged in');
+      return;
+    }
+
+    // Navigate to the outlet subscription page with the outlet ID
+    router.push(`/outletSubscriptionPage?outlet=${outletId}`);
+  };
+
+  // Update this function to check for active business subscription
+  const hasActiveBusinessSubscription = useCallback(() => {
+    return subscriptions.some(sub => 
+      sub.outlet_id === null && 
+      sub.status === "active" && 
+      new Date(sub.expiration_date) > new Date()
+    );
+  }, [subscriptions]);
+
+  // Update this function to check for active outlet subscription
+  const hasActiveOutletSubscription = useCallback((outletId: number) => {
+    return subscriptions.some(sub => 
+      sub.outlet_id === outletId && 
+      sub.status === "active" && 
+      new Date(sub.expiration_date) > new Date()
+    );
+  }, [subscriptions]);
 
   return (
     <div className='px-4 space-y-6 md:px-6'>
@@ -554,16 +636,6 @@ const ProfilePage: React.FC = () => {
           <div className='space-y-6'>
             <div className='flex justify-between items-center'>
               <h2 className='text-lg font-semibold'>Business Registration</h2>
-              <Button
-                className={`${businessRegistration?.status == 'approved' || businessRegistration?.status == 'pending'
-                  ? 'bg-gray-300 cursor-not-allowed'
-                  : 'bg-green-500 hover:bg-green-600'
-                  } text-white`}
-                onClick={() => router.push('/registerBusiness')}
-                disabled={businessRegistration?.status == 'pending' || businessRegistration?.status == 'approved'}  // Disable 
-              >
-                + Register New Business
-              </Button>
             </div>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               {!businessRegistration ? (
@@ -594,17 +666,17 @@ const ProfilePage: React.FC = () => {
 
                   <div className='mt-4 flex justify-end'>
                     <Button
-                      className={`${businessRegistration?.status === 'approved' && !businessRegistration?.hasSubscriptionPlan
+                      className={`${businessRegistration?.status === 'approved' && !hasActiveBusinessSubscription()
                         ? 'bg-blue-500 hover:bg-blue-600'
                         : 'bg-gray-300 cursor-not-allowed'
-                        } text-white`}
+                      } text-white`}
                       onClick={() => router.push('/subscriptionPage')}
                       disabled={
-                        businessRegistration?.status === 'pending' ||
-                        (businessRegistration?.status === 'approved' && businessRegistration?.hasSubscriptionPlan)
+                        businessRegistration?.status !== 'approved' ||
+                        hasActiveBusinessSubscription()
                       }
                     >
-                      Create Subscription Plan
+                      {hasActiveBusinessSubscription() ? 'Subscription Active' : 'Create Subscription Plan'}
                     </Button>
                   </div>
                 </div>
@@ -648,7 +720,7 @@ const ProfilePage: React.FC = () => {
                 <p>No outlets found.</p>
               ) : (
                 outlets.map(outlet => (
-                  <div key={outlet.outlet_name} className='border p-4 rounded-lg'>
+                  <div key={outlet.outlet_id} className='border p-4 rounded-lg'>
 
                     <div className='flex justify-between items-center mb-10'>
                       <h3 className='text-xl font-semibold'>{outlet.outlet_name}</h3>
@@ -663,20 +735,18 @@ const ProfilePage: React.FC = () => {
                     <p><strong>Location:</strong> {outlet.location}</p>
                     <p><strong>Contact:</strong> {outlet.contact}</p>
                     <p><strong>Description:</strong> {outlet.description}</p>
-                    <div className='flex justify-end mt-4'> {/* Align to right */}
+                    <div className='flex justify-between mt-4'> {/* Align to right */}
                       <Button onClick={() => handleDeleteOutlet(outlet)} className='bg-red-500 hover:bg-red-600'>Delete Outlet</Button>
-                    </div>
-
-                    <div className='flex justify-end mt-4'>
-                      {/* Create Subscription Plan Button, disabled if outlet.hasSubscriptionPlan is true */}
                       <Button
-                        className={`${outlet.hasSubscriptionPlan
-                          ? 'bg-gray-300 cursor-not-allowed'
-                          : 'bg-blue-500 hover:bg-blue-600'} text-white`}
-                        onClick={() => router.push(`/outletSubscriptionPage?outlet=${outlet.outlet_id}`)}
-                        disabled={outlet.hasSubscriptionPlan}
+                        className={`${!hasActiveOutletSubscription(outlet.outlet_id)
+                          ? 'bg-blue-500 hover:bg-blue-600'
+                          : 'bg-gray-300 cursor-not-allowed'} text-white`}
+                        onClick={() => handleCreateOutletSubscription(outlet.outlet_id)}
+                        disabled={hasActiveOutletSubscription(outlet.outlet_id)}
                       >
-                        {outlet.hasSubscriptionPlan ? 'Subscription Active' : 'Create Subscription Plan'}
+                        {hasActiveOutletSubscription(outlet.outlet_id) 
+                          ? 'Subscription Active' 
+                          : 'Create Subscription Plan'}
                       </Button>
                     </div>
                   </div>
