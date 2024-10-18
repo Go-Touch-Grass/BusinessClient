@@ -213,11 +213,7 @@ const ProfilePage: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching subscriptions:', err);
-      if (err.response && err.response.status === 401) {
-        setError('Authentication failed. Please log in again.');
-      } else {
-        setError('Failed to fetch subscriptions');
-      }
+
     }
   }, [isLoggedIn]);
 
@@ -256,13 +252,13 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     const recurringPayments = async (difference: number) => {
       console.log("amnt to top up: ", difference)
-      
+
       // Find the index of the first price detail that covers the difference
       const index = priceDetails.findIndex(detail => detail.totalGems > difference);
-      
+
       // If no suitable price detail is found, use the last (largest) option
       const priceDetail = index !== -1 ? priceDetails[index] : priceDetails[priceDetails.length - 1];
-      
+
       if (!priceDetail) {
         console.error("No suitable price detail found");
         return;
@@ -540,18 +536,18 @@ const ProfilePage: React.FC = () => {
 
   // Update this function to check for active business subscription
   const hasActiveBusinessSubscription = useCallback(() => {
-    return subscriptions.some(sub => 
-      sub.outlet_id === null && 
-      sub.status === "active" && 
+    return subscriptions.some(sub =>
+      sub.outlet_id === null &&
+      sub.status === "active" &&
       new Date(sub.expiration_date) > new Date()
     );
   }, [subscriptions]);
 
   // Update this function to check for active outlet subscription
   const hasActiveOutletSubscription = useCallback((outletId: number) => {
-    return subscriptions.some(sub => 
-      sub.outlet_id === outletId && 
-      sub.status === "active" && 
+    return subscriptions.some(sub =>
+      sub.outlet_id === outletId &&
+      sub.status === "active" &&
       new Date(sub.expiration_date) > new Date()
     );
   }, [subscriptions]);
@@ -651,6 +647,16 @@ const ProfilePage: React.FC = () => {
           <div className='space-y-6'>
             <div className='flex justify-between items-center'>
               <h2 className='text-lg font-semibold'>Business Registration</h2>
+              <Button
+                className={`${businessRegistration?.status == 'approved' || businessRegistration?.status == 'pending'
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600'
+                  } text-white`}
+                onClick={() => router.push('/registerBusiness')}
+                disabled={businessRegistration?.status == 'pending' || businessRegistration?.status == 'approved'}  // Disable 
+              >
+                + Register New Business
+              </Button>
             </div>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               {!businessRegistration ? (
@@ -684,7 +690,7 @@ const ProfilePage: React.FC = () => {
                       className={`${businessRegistration?.status === 'approved' && !hasActiveBusinessSubscription()
                         ? 'bg-blue-500 hover:bg-blue-600'
                         : 'bg-gray-300 cursor-not-allowed'
-                      } text-white`}
+                        } text-white`}
                       onClick={() => router.push('/subscriptionPage')}
                       disabled={
                         businessRegistration?.status !== 'approved' ||
@@ -772,8 +778,8 @@ const ProfilePage: React.FC = () => {
                         onClick={() => handleCreateOutletSubscription(outlet.outlet_id)}
                         disabled={hasActiveOutletSubscription(outlet.outlet_id)}
                       >
-                        {hasActiveOutletSubscription(outlet.outlet_id) 
-                          ? 'Subscription Active' 
+                        {hasActiveOutletSubscription(outlet.outlet_id)
+                          ? 'Subscription Active'
                           : 'Create Subscription Plan'}
                       </Button>
                     </div>
