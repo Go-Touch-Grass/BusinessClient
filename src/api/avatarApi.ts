@@ -39,22 +39,24 @@ const authHeader = () => {
 
 export const createAvatar = async (
 	avatarType: AvatarType,
-	baseId: number | null, // Add baseId parameter
+	baseId: number | null,
 	hatId: number | null,
 	shirtId: number | null,
 	bottomId: number | null,
-	outletId: number | null
+	outletId: number | null,
+	registrationId: number | null
 ): Promise<{ avatar: AvatarInfo; avatarId: number }> => {
 	try {
 		const response = await api.post(
 			"/api/avatars",
 			{
 				avatarType,
-				baseId, 
+				baseId,
 				hatId,
 				shirtId,
 				bottomId,
-				outletId
+				outletId,
+				registrationId
 			},
 			{ headers: authHeader() }
 		);

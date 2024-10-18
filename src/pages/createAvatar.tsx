@@ -106,17 +106,31 @@ const CreateAvatar: React.FC = () => {
 	const handleSelectItem = (item: Item) => {
 		setCustomization((prev) => {
 			if (item.type === ItemType.BASE) {
-				// For base, always equip the new item
+				// If selecting a custom base, unequip all other items
+				if (item.name === "Custom Avatar") {
+					return {
+						[ItemType.BASE]: item,
+						[ItemType.HAT]: null,
+						[ItemType.SHIRT]: null,
+						[ItemType.BOTTOM]: null,
+					};
+				}
+				// For non-custom base, just update the base
 				return { ...prev, [ItemType.BASE]: item };
 			} else {
 				// For other types, toggle between equipping and unequipping
 				const isEquipped = prev[item.type]?.id === item.id;
 				return {
 					...prev,
-					[item.type]: isEquipped ? null : item,
+						[item.type]: isEquipped ? null : item,
 				};
 			}
 		});
+
+		// If selecting a custom base, reset the selected category to BASE
+		if (item.type === ItemType.BASE && item.name === "Custom Avatar") {
+			setSelectedCategory(ItemType.BASE);
+		}
 	};
 
 	const handleCreateAvatar = async () => {
@@ -124,33 +138,38 @@ const CreateAvatar: React.FC = () => {
 		setError(null);
 		setSuccessMessage(null);
 		try {
-			// Determine the avatar type based on selected outlet
+			// Determine the avatar type based on selected outlet or business registration
 			let avatarType: AvatarType;
 			let outletId: number | null = null;
+			let registrationId: number | null = null;
+
 			if (selectedOutlet) {
 				avatarType = AvatarType.OUTLET;
-				outletId = selectedOutlet; 
-				
+				outletId = selectedOutlet;
 			} else if (businessRegistration) {
 				avatarType = AvatarType.BUSINESS_REGISTER_BUSINESS;
+				registrationId = businessRegistration.registration_id;
 			} else {
 				console.error("No outlet or business registration selected");
+				setError("Please select an outlet or business registration");
+				setIsLoading(false);
 				return;
 			}
-	
+
 			const response = await createAvatar(
 				avatarType,
 				customization[ItemType.BASE]?.id || 1,
 				customization[ItemType.HAT]?.id || null,
 				customization[ItemType.SHIRT]?.id || null,
 				customization[ItemType.BOTTOM]?.id || null,
-				outletId
+				outletId,
+				registrationId
 			);
 
 			setSuccessMessage('Avatar created successfully!');
 			console.log('Created avatar:', response.avatar);
 			console.log('Avatar ID:', response.avatarId);
-	
+
 			setTimeout(() => {
 				router.push('/viewAvatars');
 			}, 2000);

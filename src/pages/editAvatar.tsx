@@ -54,7 +54,16 @@ const EditAvatar: React.FC = () => {
 	const handleSelectItem = (item: Item) => {
 		setCustomization((prev) => {
 			if (item.type === ItemType.BASE) {
-				// For base, always equip the new item
+				// If selecting a custom base, unequip all other items
+				if (item.name === "Custom Avatar") {
+					return {
+						[ItemType.BASE]: item,
+						[ItemType.HAT]: null,
+						[ItemType.SHIRT]: null,
+						[ItemType.BOTTOM]: null,
+					};
+				}
+				// For non-custom base, just update the base
 				return { ...prev, [ItemType.BASE]: item };
 			} else {
 				// For other types, toggle between equipping and unequipping
@@ -65,6 +74,11 @@ const EditAvatar: React.FC = () => {
 				};
 			}
 		});
+
+		// If selecting a custom base, reset the selected category to BASE
+		if (item.type === ItemType.BASE && item.name === "Custom Avatar") {
+			setSelectedCategory(ItemType.BASE);
+		}
 	};
 
 	const handleBack = () => {

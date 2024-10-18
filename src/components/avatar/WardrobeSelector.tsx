@@ -23,6 +23,8 @@ const WardrobeSelector: React.FC<WardrobeSelectorProps> = ({
     handleSelectItem,
     customization
 }) => {
+    const isCustomBase = customization[ItemType.BASE]?.name === "Custom Avatar";
+
     const renderWardrobeItems = () => {
         const filteredItems = items.filter(
             (item) => item.type === selectedCategory
@@ -59,27 +61,37 @@ const WardrobeSelector: React.FC<WardrobeSelectorProps> = ({
                     Base
                 </Button>
                 <Button
-                    onClick={() => setSelectedCategory(ItemType.HAT)}
+                    onClick={() => !isCustomBase && setSelectedCategory(ItemType.HAT)}
                     variant={selectedCategory === ItemType.HAT ? "default" : "outline"}
+                    disabled={isCustomBase}
+                    className={isCustomBase ? "opacity-50 cursor-not-allowed" : ""}
                 >
                     Hat
                 </Button>
                 <Button
-                    onClick={() => setSelectedCategory(ItemType.SHIRT)}
+                    onClick={() => !isCustomBase && setSelectedCategory(ItemType.SHIRT)}
                     variant={selectedCategory === ItemType.SHIRT ? "default" : "outline"}
+                    disabled={isCustomBase}
+                    className={isCustomBase ? "opacity-50 cursor-not-allowed" : ""}
                 >
                     Upper Wear
                 </Button>
                 <Button
-                    onClick={() => setSelectedCategory(ItemType.BOTTOM)}
+                    onClick={() => !isCustomBase && setSelectedCategory(ItemType.BOTTOM)}
                     variant={selectedCategory === ItemType.BOTTOM ? "default" : "outline"}
+                    disabled={isCustomBase}
+                    className={isCustomBase ? "opacity-50 cursor-not-allowed" : ""}
                 >
                     Lower Wear
                 </Button>
             </div>
 
             <div className="w-full overflow-y-auto max-h-64">
-                {renderWardrobeItems()}
+                {isCustomBase && selectedCategory !== ItemType.BASE ? (
+                    <p className="text-center text-gray-500">Fashion items cannot be equipped with a custom avatar base.</p>
+                ) : (
+                    renderWardrobeItems()
+                )}
             </div>
         </div>
     );
