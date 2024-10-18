@@ -185,6 +185,9 @@ const ProfilePage: React.FC = () => {
 
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
 
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+
   const fetchSubscriptions = useCallback(async () => {
     if (!isLoggedIn) {
       setError('User is not logged in');
@@ -447,16 +450,16 @@ const ProfilePage: React.FC = () => {
   console.log("Image Preview:", imagePreview);
   console.log("Profile Image Path:", profileImage);
   const handleDeleteOutlet = (outlet: Outlet) => {
-
-    setSelectedOutlet(outlet);  // Store the outlet for deletion
-    setIsOutletModalVisible(true);     // Open the confirmation modal
+    setSelectedOutlet(outlet);
+    setIsOutletModalVisible(true);
   };
   const handleConfirmDeleteOutlet = async (contact: string) => {
     if (!selectedOutlet) return;
 
     // Check if the contact matches
     if (contact !== selectedOutlet.contact) {
-      alert("Contact number does not match. Deletion cancelled.");
+      setAlertMessage("Contact number does not match. Deletion cancelled.");
+      setIsAlertVisible(true);
       return;
     }
 
@@ -467,22 +470,34 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const response = await api.delete(`/api/business/outlets/${selectedOutlet.outlet_id}`);
+      const response = await api.delete(`/api/business/outlets/${selectedOutlet.outlet_id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       if (response.status === 200) {
-        setOutlets(outlets.filter((outlet) => outlet.outlet_id !== selectedOutlet.outlet_id)); // create a new outlets array and exclude the outlet with the given id
+        setOutlets(outlets.filter((outlet) => outlet.outlet_id !== selectedOutlet.outlet_id));
         setError(null);
+        setAlertMessage('Outlet deleted successfully');
+        setIsAlertVisible(true);
       } else {
         setError('Failed to delete outlet');
       }
-
     } catch (err) {
-      setError('An error occurred while deleting outlet');
       console.error('API call error:', err);
+      if (err.response) {
+        setError(`Error: ${err.response.status} - ${err.response.data.message}`);
+      } else if (err.request) {
+        setError('No response received from server');
+      } else {
+        setError('An error occurred while deleting outlet');
+      }
     }
 
     setSelectedOutlet(null);
     setIsOutletModalVisible(false);
-  }
+  };
 
   const handleDeleteAccountButtonClick = () => {
     setIsAccountModalVisible(true); // Open the confirmation modal
@@ -714,6 +729,19 @@ const ProfilePage: React.FC = () => {
               onConfirm={handleConfirmDeleteOutlet}
               outletContact={selectedOutlet?.contact || ''}
               confirmationType="contact"
+              message={
+                <>
+                  <p><strong>Warning:</strong></p>
+                  <p>Deleting this outlet will:</p>
+                  <ul className="list-disc list-inside mb-2">
+                    <li>End all associated subscriptions</li>
+                    <li>Delete all related vouchers</li>
+                    <li>Cause customers to lose unused vouchers. (<i>Your business will be charged for a full refund!)</i></li>
+                  </ul>
+                  <p>This action is not reversible.</p>
+                  <p className="mt-2">Please enter the outlet contact number to confirm deletion:</p>
+                </>
+              }
             />
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               {outlets.length === 0 ? (
@@ -785,6 +813,16 @@ const ProfilePage: React.FC = () => {
           onConfirm={handleConfirmDeleteAccount} // Pass handleDeleteAccount for confirmation
           outletContact="" // Not needed for account deletion, but modal expects it
           confirmationType="password" // Specify that this modal should collect password
+          message="This will delete your account and all associated data. Please enter your password to confirm account deletion:"
+        />
+
+        <ConfirmationModal
+          isVisible={isAlertVisible}
+          onClose={() => setIsAlertVisible(false)}
+          onConfirm={() => setIsAlertVisible(false)}
+          outletContact=""
+          confirmationType="alert"
+          message={alertMessage || ''}
         />
         {error && <p className='text-red-500 text-sm'>{error}</p>}
       </div >
