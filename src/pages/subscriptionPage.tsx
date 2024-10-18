@@ -66,7 +66,7 @@ const BusinessSubscription = () => {
             }
         } catch (err) {
             console.error('Error submitting form:', err);
-            setError('An error occurred while submitting. Please try again.');
+            setError('Not enough gems in your gem_balance.');
         } finally {
             setLoading(false);
         }
