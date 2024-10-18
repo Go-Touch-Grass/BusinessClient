@@ -724,9 +724,13 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Display reason why the button is disabled */}
-            {businessRegistration?.status !== 'approved' && (
+            {businessRegistration === null ? (
               <p className="text-sm text-gray-500">
-                You cannot add an outlet because your business registration is currently <strong>{businessRegistration?.status}</strong>.
+                You cannot add an outlet because you haven't registered your business yet.
+              </p>
+            ) : businessRegistration.status !== 'approved' && (
+              <p className="text-sm text-gray-500">
+                You cannot add an outlet because your business registration is currently <strong>{businessRegistration.status}</strong>.
               </p>
             )}
             <ConfirmationModal

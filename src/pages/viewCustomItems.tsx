@@ -85,7 +85,7 @@ const ViewCustomItems: React.FC = () => {
                     Back
                 </Button>
                 <h1 className="text-4xl font-bold text-zinc-700 text-center">
-                    Your Custom Items
+                    Custom Assets
                 </h1>
                 <div className="w-[100px]"></div>
             </div>

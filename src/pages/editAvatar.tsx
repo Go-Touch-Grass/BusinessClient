@@ -108,15 +108,15 @@ const EditAvatar: React.FC = () => {
 		setError(null);
 		try {
 			const updatedInfo: {
-				baseId?: number;
-				hatId?: number;
-				shirtId?: number;
-				bottomId?: number;
+				baseId?: number | null;
+				hatId?: number | null;
+				shirtId?: number | null;
+				bottomId?: number | null;
 			} = {
-				baseId: customization[ItemType.BASE]?.id,
-				hatId: customization[ItemType.HAT]?.id,
-				shirtId: customization[ItemType.SHIRT]?.id,
-				bottomId: customization[ItemType.BOTTOM]?.id,
+				baseId: customization[ItemType.BASE]?.id ?? null,
+				hatId: customization[ItemType.HAT]?.id ?? null,
+				shirtId: customization[ItemType.SHIRT]?.id ?? null,
+				bottomId: customization[ItemType.BOTTOM]?.id ?? null,
 			};
 
 			const numericAvatarId = Number(avatarId);

@@ -124,7 +124,7 @@ const AvatarManagement: React.FC = () => {
 						Upload Custom Item
 					</Button>
 					<Button onClick={handleViewCustomItems} variant="outline">
-						View All Custom Items
+						View All Custom Assets
 					</Button>
 				</div>
 			</div>
