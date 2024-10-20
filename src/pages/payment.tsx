@@ -25,8 +25,9 @@ const PaymentPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [gems, setGems] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
+  const [savedPaymentMethodId, setSavedPaymentMethodId] = useState<any | null>(null);
+  const [savedPaymentMethod, setSavedPaymentMethod] = useState<any | null>(null);
 
-  // Get bundle info from query parameters
   useEffect(() => {
     if (router.query.gems && router.query.price) {
       setGems(parseInt(router.query.gems as string, 10));
@@ -34,8 +35,25 @@ const PaymentPage: React.FC = () => {
     }
   }, [router.query]);
 
+  // Fetch saved payment method if exists
+  useEffect(() => {
+    const fetchSavedPaymentMethod = async () => {
+      try {
+        const response = await api.get('/api/payment/get-payment-method-id');
+        if (response.data.paymentMethodId) {
+          setSavedPaymentMethodId(response.data.paymentMethodId);
+          const paymentMethodResponse = await api.get('/api/payment/get-payment-method');
+          setSavedPaymentMethod(paymentMethodResponse.data);
+        }
+      } catch (error) {
+        console.error("Error fetching saved payment method:", error);
+      }
+    };
+
+    fetchSavedPaymentMethod();
+  }, [router.query.businessId]);
+
   const handleSubmit = async (event: React.FormEvent) => {
-    //event.preventDefault();
     setPaymentProcessing(true);
 
     if (!gems || !price) {
@@ -44,48 +62,101 @@ const PaymentPage: React.FC = () => {
       return;
     }
 
-    // Call your backend API to create a PaymentIntent and get the clientSecret
-    const { clientSecret } = await api
-      .post("/api/payment/create-payment-intent", {
-        amount: price * 100, // in cents
-        currency: "sgd",
-      })
-      .then((response) => response.data)
-      .catch((error) => {
+    try {
+      const { clientSecret, paymentIntentId } = await api
+        .post("/api/payment/create-payment-intent", {
+          amount: price * 100, // in cents
+          currency: "sgd",
+        })
+        .then((response) => response.data);
+
+      if (!clientSecret || !paymentIntentId) {
         setErrorMessage("Error creating payment intent");
         setPaymentProcessing(false);
-        return { clientSecret: null };
-      });
+        return;
+      }
 
-    if (!clientSecret) return;
+      // Check if the user has a saved payment method
+      const { paymentMethodId } = await api
+        .get("/api/payment/get-payment-method-id")
+        .then((response) => response.data);
 
-    const cardElement = elements?.getElement(CardElement);
-    if (!cardElement) {
-      setErrorMessage("Card information not found.");
-      return;
+      if (paymentMethodId) {
+        // Use saved payment method
+        const { error, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
+          payment_method: paymentMethodId,
+        });
+
+        if (error) {
+          setErrorMessage(error.message || "Payment failed");
+          setPaymentProcessing(false);
+          return;
+        }
+
+        if (paymentIntent?.status === "succeeded") {
+          await api.post("/api/business/verify_topup", {
+            paymentIntentId,
+            gemsAdded: gems,
+          });
+          setSuccessMessage("Payment and top-up succeeded!");
+        }
+      } else {
+        // No saved payment method, proceed with card entry
+        const cardElement = elements?.getElement(CardElement);
+        if (!cardElement) {
+          setErrorMessage("Card information not found.");
+          setPaymentProcessing(false);
+          return;
+        }
+
+        const { email, username } = await api
+          .get("/api/payment/get-user-email-and-username")
+          .then((response) => response.data);
+
+        const { error, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              email: email, // Fetch user email from API
+              name: username, // Fetch user name from API
+            }
+          },
+        });
+
+        if (error) {
+          setErrorMessage(error.message || "Payment failed");
+          setPaymentProcessing(false);
+          return;
+        }
+
+        if (paymentIntent?.status === "succeeded") {
+          await api.post("/api/payment/save-payment-method-id", {
+            paymentMethodId: paymentIntent.payment_method,
+          });
+
+          await api.post("/api/business/verify_topup", {
+            paymentIntentId,
+            gemsAdded: gems,
+          });
+          setSuccessMessage("Payment and top-up succeeded!");
+        }
+      }
+    } catch (error) {
+      setErrorMessage("An error occurred during payment processing.");
+    } finally {
+      setPaymentProcessing(false);
     }
+  };
 
-    // Confirm the payment using the clientSecret
-    const { error, paymentIntent } =
-      (await stripe?.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        },
-      })) || {};
 
-    if (error) {
-      setErrorMessage(error.message || "Payment failed");
-    } else if (paymentIntent?.status === "succeeded") {
-      setSuccessMessage("Payment succeeded!");
-
-      // Call your backend API to update the gem balance after successful payment
-      await api.post("/api/business/top_up_gems", {
-        currency_cents: price, // Amount paid in cents
-        gems_added: gems, // Add gems to the business account
-      });
+  const handleDeleteSavedMethod = async () => {
+    try {
+      await api.delete("/api/payment/delete-payment-method-id");
+      setSavedPaymentMethodId(null);
+      setSavedPaymentMethod(null);
+    } catch (error) {
+      setErrorMessage("Error deleting saved payment method.");
     }
-
-    setPaymentProcessing(false);
   };
 
   return (
@@ -102,6 +173,7 @@ const PaymentPage: React.FC = () => {
           <AlertDescription>{successMessage}</AlertDescription>
         </Alert>
       )}
+
       <b className="text-2xl pb-4">Add Payment Details</b>
 
       <div className="flex flex-col gap-6">
@@ -109,11 +181,27 @@ const PaymentPage: React.FC = () => {
           <p>Total Payable Amount: ${price}</p>
           <p>You will be credited: {gems} gems</p>
         </div>
-        <b>Card Details </b>
-        <CardElement />
-        <Button disabled={!stripe || paymentProcessing} onClick={handleSubmit}>
-          {paymentProcessing ? "Processing..." : `Pay Now`}
-        </Button>
+
+        {savedPaymentMethod ? (
+          <div>
+            <b>Saved Payment Method</b>
+            <p>{savedPaymentMethod.card.brand} **** {savedPaymentMethod.card.last4}</p>
+            <Button onClick={handleSubmit} disabled={paymentProcessing}>
+              {paymentProcessing ? "Processing..." : "Pay with Saved Method"}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteSavedMethod}>
+              Delete Saved Method
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <b>Card Details </b>
+            <CardElement />
+            <Button disabled={!stripe || paymentProcessing} onClick={handleSubmit}>
+              {paymentProcessing ? "Processing..." : "Pay Now"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

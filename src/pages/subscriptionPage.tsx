@@ -5,13 +5,13 @@ import api from '@/api';
 
 const BusinessSubscription = () => {
     const [duration, setDuration] = useState(1);
-    const [distance_coverage, setDistanceCoverage] = useState(0); 
+    const [distance_coverage, setDistanceCoverage] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const router = useRouter(); 
+    const router = useRouter();
 
-    
+
     const pricing = {
         base: {
             1: { price: 50, gems: 500 },
@@ -49,20 +49,24 @@ const BusinessSubscription = () => {
                 description: `Subscription for ${duration} month(s) with ${distance_coverage} km coverage.`,
             };
 
-                
+
             console.log('Request Payload:', payload);
 
             const response = await api.post(`/api/business/subscription/${username}`, payload);
 
             if (response.status === 201) {
+                await api.put(`/api/business/updateHasSubscription/${username}`, { hasSubscriptionPlan: true });
                 setSuccessMessage('Subscription created successfully!');
-                router.push('/profile'); 
+                // Route to the subscription page after a short delay
+                setTimeout(() => {
+                    router.push('/viewSubscriptionPage');
+                }, 0);
             } else {
                 setError(`Failed to create subscription: ${response.data.message || 'Unknown error'}`);
             }
         } catch (err) {
             console.error('Error submitting form:', err);
-            setError('An error occurred while submitting. Please try again.');
+            setError('Not enough gems in your gem balance!');
         } finally {
             setLoading(false);
         }

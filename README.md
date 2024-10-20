@@ -24,6 +24,3 @@ npm run dev
 2. TailwindCSS is installed for easier styling, allows for inline styling [Documentation](https://tailwindcss.com/docs/installation). Further configuration might be necessary after component library is selected. For UI/UX leads, upon selection of theme, please input set of hex codes we are using into tailwind.config.ts
 
 3. For file organisation, would be cleaner to have a src/components and put those components into src/pages
-
-4. Create a `.env` file. In the file, add in the following:</br>
-`NEXT_PUBLIC_MAPS_API_KEY=` (For this maps api key, ask jinyuen)

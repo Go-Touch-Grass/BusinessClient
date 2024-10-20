@@ -60,7 +60,17 @@ const ViewSubscriptions = () => {
     };
 
     fetchSubscriptions();
+
+    // Set an interval to refresh subscriptions and check expiration status every minute
+    const intervalId = setInterval(() => {
+      fetchSubscriptions(); // re-fetch the subscriptions to check for expiration
+    }, 5000); // every 5 seconds
+
+    return () => clearInterval(intervalId); // Clear the interval on component unmount
+
   }, []);
+
+
 
 
   const enableAutoRenew = async (subscription: Subscription) => {
@@ -100,20 +110,16 @@ const ViewSubscriptions = () => {
 
 
 
-  const calculateTimeLeft = (expirationDate: Date) => {
+  const calculateTimeLeft = (expirationDate: Date | string) => {
     const currentDate = new Date();
-    const diff = expirationDate.getTime() - currentDate.getTime();
+    const expiration = new Date(expirationDate);
 
-
-    console.log('Current Date:', currentDate);
-    console.log('Expiration Date:', expirationDate);
-    console.log('Time Difference (ms):', diff);
-
+    // Ensure time zones are accounted for
+    const diff = expiration.getTime() - currentDate.getTime();
 
     if (diff < 0) {
       return 'Expired';
     }
-
 
     const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hoursLeft = Math.floor((diff / (1000 * 60 * 60)) % 24);
@@ -129,6 +135,7 @@ const ViewSubscriptions = () => {
   };
 
 
+
   const isSubscriptionActive = (expirationDate: Date) => {
     const currentDate = new Date();
     return currentDate < expirationDate;
@@ -142,6 +149,7 @@ const ViewSubscriptions = () => {
         return;
       }
 
+      // Make sure you are using `response.data` to get the result from Axios
       const response = await api.put('/api/business/renew_subscription', {
         username,
         outlet_id: subscription.outlet_id,
@@ -149,24 +157,33 @@ const ViewSubscriptions = () => {
         distance_coverage: subscription.distance_coverage,
       });
 
-      const currentDate = new Date();
-      const newExpirationDate = new Date(currentDate);
-      newExpirationDate.setMonth(currentDate.getMonth() + subscription.duration);
+      // Check if the response was successful and log the data
+      if (response && response.data) {
+        console.log('Renewal response from backend:', response.data);
 
-      setSubscriptions((prevSubscriptions) =>
-        prevSubscriptions.map((sub) =>
-          sub.outlet_id === subscription.outlet_id
-            ? {
-              ...sub,
-              activation_date: currentDate,
-              expiration_date: newExpirationDate,
-            }
-            : sub
-        )
-      );
+        const { subscription: updatedSubscription } = response.data; // Destructure updated subscription data
+        const currentDate = new Date();
+        const newExpirationDate = new Date(currentDate);
+        newExpirationDate.setMonth(currentDate.getMonth() + updatedSubscription.duration);
+
+        // Update subscriptions with the new expiration and activation date
+        setSubscriptions((prevSubscriptions) =>
+          prevSubscriptions.map((sub) =>
+            sub.outlet_id === subscription.outlet_id
+              ? {
+                ...sub,
+                activation_date: updatedSubscription.activation_date, // Update with backend data
+                expiration_date: updatedSubscription.expiration_date, // Update with backend data
+              }
+              : sub
+          )
+        );
+      } else {
+        setRenewError('No valid response from backend');
+      }
     } catch (err) {
       console.error('Renewal error:', err);
-      setRenewError('Error renewing subscription');
+      setRenewError('Not Enough Gems in Gem Balance !!!');
     }
   };
 
@@ -185,15 +202,43 @@ const ViewSubscriptions = () => {
         },
       });
 
-
       if (response.status === 200) {
+        // Remove the subscription from the local state
         setSubscriptions((prevSubscriptions) =>
-          prevSubscriptions.filter((sub) => sub.outlet_id !== subscription.outlet_id)
+          prevSubscriptions.filter((sub) => sub.subscription_id !== subscription.subscription_id)
         );
+
+        // Update the hasSubscriptionPlan for the business account
+        const updateResponse = await api.put(`/api/business/updateHasSubscription/${username}`, {
+          hasSubscriptionPlan: false,
+        });
+
+        if (updateResponse.status === 200) {
+          console.log('Business account subscription plan status updated to false');
+        } else {
+          console.error('Failed to update business account subscription plan status');
+        }
+
+        // Update the hasSubscriptionPlan for the outlet
+        if (subscription.outlet_id !== null) {
+          const updateOutletResponse = await api.put(`/api/business/outlet/updateOutletHasSubscription/${subscription.outlet_id}`, {
+            hasSubscriptionPlan: false,
+          });
+
+          if (updateOutletResponse.status === 200) {
+            console.log('Outlet subscription plan status updated to false');
+          } else {
+            console.error('Failed to update outlet subscription plan status');
+          }
+        }
+
+        alert('Subscription ended successfully');
+      } else {
+        setEndError('Failed to end subscription');
       }
     } catch (err) {
       console.error('End subscription error:', err);
-      setEndError('Error ending subscription');
+      // setEndError('Error ending subscription');
     }
   };
 

@@ -1,33 +1,31 @@
 import api from "@/api";
 import Cookies from "js-cookie";
+import { Item } from "./itemApi";
 
-export enum ItemType {
-	HAT = "hat",
-	SHIRT = "shirt",
-	BOTTOM = "bottom",
-	BASE = "base", // Add the new BASE type
-}
-
-export interface Item {
+export interface Avatar {
 	id: number;
-	name: string;
-	type: ItemType;
-	filepath: string;
+	base: Item | null; // Add the base item
+	hat: Item | null;
+	shirt: Item | null;
+	bottom: Item | null;
 }
 
 export interface AvatarInfo {
 	id: number;
 	avatarType: AvatarType;
-	business?: { id: number };
-	base?: Item; // Add the base item
+	customer? : {id : number};
+	business_register_business?: { registration_id: number };
+	outlet?: { outlet_id : number }
+	base?: Item; 
 	hat?: Item;
 	shirt?: Item;
 	bottom?: Item;
 }
 
 export enum AvatarType {
-	BUSINESS = "business",
-	TOURIST = "tourist",
+	BUSINESS_REGISTER_BUSINESS = 'business_register_business',
+    OUTLET = 'outlet',
+    TOURIST = 'tourist'
 }
 
 const getAuthToken = (): string | null => {
@@ -39,37 +37,26 @@ const authHeader = () => {
 	return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const getItems = async (): Promise<Item[]> => {
-	try {
-		const response = await api.get("/api/items", {
-			headers: authHeader(),
-		});
-		if (!Array.isArray(response.data)) {
-			throw new Error("Invalid response format");
-		}
-		return response.data;
-	} catch (error) {
-		console.error("Error fetching items:", error);
-		throw handleApiError(error);
-	}
-};
-
 export const createAvatar = async (
 	avatarType: AvatarType,
-	baseId: number | null, // Add baseId parameter
+	baseId: number | null,
 	hatId: number | null,
 	shirtId: number | null,
-	bottomId: number | null
+	bottomId: number | null,
+	outletId: number | null,
+	registrationId: number | null
 ): Promise<{ avatar: AvatarInfo; avatarId: number }> => {
 	try {
 		const response = await api.post(
 			"/api/avatars",
 			{
 				avatarType,
-				baseId, // Include baseId in the request
+				baseId,
 				hatId,
 				shirtId,
 				bottomId,
+				outletId,
+				registrationId
 			},
 			{ headers: authHeader() }
 		);
@@ -80,14 +67,7 @@ export const createAvatar = async (
 	}
 };
 
-export interface Avatar {
-	id: number;
-	base: Item | null; // Add the base item
-	hat: Item | null;
-	shirt: Item | null;
-	bottom: Item | null;
-}
-
+/*
 export const getBusinessAvatars = async (
 	username: string
 ): Promise<Avatar[]> => {
@@ -107,6 +87,42 @@ export const getBusinessAvatars = async (
 		throw handleApiError(error);
 	}
 };
+*/
+
+export const getAvatarByBusinessRegistrationId = async (registrationId: number): Promise<AvatarInfo> => {
+	try {
+	  const response = await api.get(`/api/avatars/business/${registrationId}`, {
+		headers: authHeader(),
+	  });
+	  return response.data;
+	} catch (error: any) {
+	  // Log detailed Axios error for more information
+	  if (error.response) {
+		console.error('Response error:', error.response.data); // Error from the server
+		console.error('Response status:', error.response.status); // HTTP status code
+		console.error('Response headers:', error.response.headers); // Headers
+	  } else if (error.request) {
+		console.error('Request error:', error.request); // Request was made but no response received
+	  } else {
+		console.error('Error message:', error.message); // Something else triggered the error
+	  }
+	  console.error('Config:', error.config); // Axios config details
+	  throw handleApiError(error); // Existing error handler
+	}
+  };
+  
+
+  export const getAvatarByOutletId = async (outletId: number): Promise<AvatarInfo> => {
+	try {
+	  const response = await api.get(`/api/avatars/outlet/${outletId}`, {
+		headers: authHeader(),
+	  });
+	  return response.data;
+	} catch (error) {
+	  console.error('Error fetching avatar by Outlet ID:', error);
+	  throw handleApiError(error);
+	}
+  };
 
 export const getAvatarById = async (id: number): Promise<AvatarInfo> => {
 	try {

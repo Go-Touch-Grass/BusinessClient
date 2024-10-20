@@ -7,6 +7,7 @@ import { Input } from '../../components/components/ui/input';
 import { Button } from '../../components/components/ui/button';
 import router from 'next/router';
 import { isAxiosError } from 'axios';
+import { BusinessAccount } from '../profile';
 
 interface Voucher {
     listing_id: number;
@@ -18,6 +19,12 @@ interface Voucher {
     groupPurchaseEnabled: boolean;
     groupSize: number;
     groupDiscount: number;
+    rewardItem: {
+        id: number;
+        name: string;
+        filepath: string;
+        status: string;
+    };
 }
 
 interface Outlet {
@@ -47,6 +54,7 @@ const VoucherList = () => {
     const [businessRegistration, setBusinessRegistration] = useState<BusinessRegistration | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<string>(''); // store business_id or outlet_id
     const [searchTerm, setSearchTerm] = useState(''); // Single search term
+    const [profile, setProfile] = useState<BusinessAccount>()
 
     const handleViewTransactions = (voucher: Voucher) => {
         router.push({
@@ -56,18 +64,32 @@ const VoucherList = () => {
     };
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchProfileAndVouchers = async () => {
             try {
                 const token = Cookies.get('authToken');
                 if (!token) {
                     setError('No token found. Please log in.');
                     return;
                 }
-                //const response = await api.get(`/api/business/profile/${username}`);
                 const response = await api.get(`/api/business/profile`);
                 if (response.status === 200) {
                     setOutlets(response.data.outlets);
-                    setBusinessRegistration(response.data.registeredBusiness); // Set the business registration data
+                    setProfile(response.data.business)
+                    setBusinessRegistration(response.data.registeredBusiness);
+
+                    const branchOptions = [
+                        ...(response.data.registeredBusiness ? [`registration_${response.data.registeredBusiness.registration_id}`] : []),
+                        ...response.data.outlets.map((outlet: Outlet) => `outlet_${outlet.outlet_id}`)
+                    ];
+
+                    if (branchOptions.length === 1) {
+                        setSelectedBranch(branchOptions[0]);
+                        await fetchVouchers(branchOptions[0], '');
+                    } else if (branchOptions.length > 1) {
+                        // If there are multiple branches, select the first one and fetch its vouchers
+                        setSelectedBranch(branchOptions[0]);
+                        await fetchVouchers(branchOptions[0], '');
+                    }
                 } else {
                     setError(response.data.message || 'Failed to fetch profile');
                 }
@@ -77,20 +99,13 @@ const VoucherList = () => {
             }
         };
 
-        fetchProfile();
+        fetchProfileAndVouchers();
     }, []);
 
 
     const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
-        // Prevent selecting the "Select a Branch" option (empty value)
-        if (value === '') {
-            return;
-        }
-        setVouchers([]);  // Clear vouchers
-        setError('');     // Clear error message
         setSelectedBranch(value);
-        //fetchVouchers(value); // Fetch vouchers based on selected branch
         fetchVouchers(value, searchTerm);
     };
 
@@ -110,18 +125,10 @@ const VoucherList = () => {
             }
 
             response = await api.get(`/api/business/vouchers`, { params });
-            /*
-            if (branchId.startsWith('registration_')) {
-                const registrationId = branchId.split('_')[1];  // Extract the registration_id (for main business)
-                response = await api.get(`/api/business/vouchers?registration_id=${registrationId}`);
-            } else {
-                const outletId = branchId.split('_')[1]; // Extract the outlet_id
-                response = await api.get(`/api/business/vouchers?outlet_id=${outletId}`);
-            }*/
-
 
             if (response.status === 200) {
                 setVouchers(response.data.vouchers);
+                console.log(response.data.vouchers);
             } else if (response.status === 404) {
                 setVouchers([]);
                 setError('');  // Clear error for 404 case to show no voucher message.
@@ -242,7 +249,7 @@ const VoucherList = () => {
     //console.log('error:', error);
     return (
         <div>
-            <h1>View Vouchers</h1>
+            <h1>Search Vouchers</h1>
 
             {/* Single Search Box */}
             <div className="flex space-x-4 mb-10">
@@ -254,106 +261,129 @@ const VoucherList = () => {
                 <Button onClick={handleSearch}>Search</Button>
                 <Button onClick={clearSearch}>Clear Search</Button>
             </div>
+            <div className={`flex flex-col relative ${profile?.banStatus && "cursor-not-allowed"}`}>
+                {profile?.banStatus && <div className="absolute bg-gray-400 w-full h-full font-bold opacity-90 p-10 flex flex-col justify-center items-center">
+                    <div>Your account has been locked by our admin due to the following reason(s):</div>
+                    <div>{profile.banRemarks}</div>
+                    <div>Please resolve the above issues to proceed further.</div>
+                </div>}
+                <div className='flex justify-between items-center space-y-2'>
+                    <h2 className='text-lg font-semibold'>Your Outlets</h2>
 
-            <div className='flex justify-between items-center space-y-2'>
-                <h2 className='text-lg font-semibold'>Your Outlets</h2>
+                    {/* Existing Add Outlet Button */}
+                    <Button
+                        className={'bg-green-500 hover:bg-green-600 text-white'}
+                        onClick={() => router.push('./voucher/addVoucher')}
+                    >
+                        + Add New Voucher
+                    </Button>
+                </div>
 
-                {/* Existing Add Outlet Button */}
-                <Button
-                    className={'bg-green-500 hover:bg-green-600 text-white'}
-                    onClick={() => router.push('./voucher/addVoucher')}
-                >
-                    + Add New Voucher
-                </Button>
-            </div>
-
-            {/* Dropdown to select between main business and outlets */}
-            <Label htmlFor="branch-select">Select Branch: </Label>
-            <select id="branch-select" value={selectedBranch} onChange={handleBranchChange}>
-                <option value="">-- Select a Branch --</option>
-
-                {/* Main business option */}
-                {businessRegistration && (
-                    <option value={`registration_${businessRegistration.registration_id}`}>
-                        {businessRegistration.entityName} (Main Branch)
-                    </option>
-                )}
-
-                {/* Outlet options */}
-                {outlets.map((outlet) => (
-                    <option key={`outlet_${outlet.outlet_id}`} value={`outlet_${outlet.outlet_id}`}>
-                        {outlet.outlet_name} (Outlet)
-                    </option>
-                ))}
-            </select>
-
-            <div className="flex justify-between items-center space-y-4"></div>
-
-            {/* Display vouchers */}
-            <br />
-            <div className="container mx-auto">
-                <h1 className="text-2xl font-bold mb-6">Manage Vouchers</h1>
-
-                {Array.isArray(vouchers) && vouchers.length === 0 ? (
-                    <p>No vouchers available.</p>
-                ) : error === 'No results found' ? (
-                    <p>No results found.</p>
-                ) : error && error !== 'No results found' ? (
-                    <p className="text-red-500">{error}</p>
-                ) : Array.isArray(vouchers) && vouchers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {vouchers.map((voucher) => {
-                            const discountedPrice = (voucher.price - (voucher.price * voucher.discount / 100)).toFixed(2);
-                            return (
-                                <div
-                                    key={voucher.listing_id}
-                                    className="border rounded-lg shadow-lg p-4 bg-white"
-                                >
-                                    {voucher.voucherImage && (
-                                        <img
-                                            src={(voucher.voucherImage ? `http://localhost:8080/${voucher.voucherImage}` : '/public/images/profile.png')}
-                                            alt={voucher.name}
-                                            className="w-full h-48 object-cover mb-4 rounded"
-                                        />
-                                    )}
-                                    <h3 className="text-xl font-semibold mb-2">{voucher.name}</h3>
-                                    <p className="text-gray-700 mb-2">{voucher.description}</p>
-                                    <p className="text-gray-900 font-bold mb-2">
-                                        Price: <span className="line-through">${voucher.price}</span>{' '}
-                                        <span className="text-green-500">${discountedPrice}</span>
-                                    </p>
-                                    <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
-                                    <p className="text-gray-500 mb-4 text-sm">
-                                        Group Purchase: {voucher.groupPurchaseEnabled ? 'Enabled' : 'Disabled'}
-                                    </p>
-                                    <div className="flex justify-between">
-                                        <Button
-                                            onClick={() => handleEdit(voucher)}
-                                            variant="default"
-                                        >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleViewTransactions(voucher)} // New button to view transactions
-                                            variant="default" // Use the same variant as Edit button
-                                        >
-                                            View Transactions
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleDelete(voucher.listing_id)}
-                                            variant="destructive"
-                                        >
-                                            Delete
-                                        </Button>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                {/* Updated branch selection dropdown */}
+                {(businessRegistration || outlets.length > 0) && (
+                    <div>
+                        <Label htmlFor="branch-select">Select Branch: </Label>
+                        <select
+                            id="branch-select"
+                            value={selectedBranch}
+                            onChange={handleBranchChange}
+                            className="w-full p-2 border rounded"
+                        >
+                            {businessRegistration && (
+                                <option value={`registration_${businessRegistration.registration_id}`}>
+                                    {businessRegistration.entityName} (Main Branch)
+                                </option>
+                            )}
+                            {outlets.map((outlet) => (
+                                <option key={`outlet_${outlet.outlet_id}`} value={`outlet_${outlet.outlet_id}`}>
+                                    {outlet.outlet_name} (Outlet)
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                ) : (
-                    <p>No vouchers found.</p>
                 )}
 
+                <div className="flex justify-between items-center space-y-4"></div>
+
+                {/* Display vouchers */}
+                <br />
+                <div className="container mx-auto">
+                    <h1 className="text-2xl font-bold mb-6 mt-10">Manage Vouchers</h1>
+
+                    {Array.isArray(vouchers) && vouchers.length === 0 ? (
+                        <p>No vouchers available.</p>
+                    ) : error === 'No results found' ? (
+                        <p>No results found.</p>
+                    ) : error && error !== 'No results found' ? (
+                        <p className="text-red-500">{error}</p>
+                    ) : Array.isArray(vouchers) && vouchers.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {vouchers.map((voucher) => {
+                                const discountedPrice = (voucher.price - (voucher.price * voucher.discount / 100)).toFixed(2);
+                                return (
+                                    <div
+                                        key={voucher.listing_id}
+                                        className="border rounded-lg shadow-lg p-4 bg-white"
+                                    >
+                                        <h3 className="text-lg font-semibold mb-2">Voucher: {voucher.name}</h3>
+                                        {voucher.voucherImage && (
+                                            <img
+                                                src={`http://localhost:8080/${voucher.voucherImage}`}
+                                                alt={voucher.name}
+                                                className="w-full h-48 object-cover mb-2 rounded"
+                                            />
+                                        )}
+                                        <p className="text-sm text-gray-600 mb-2">Desc: {voucher.description}</p>
+
+                                        <p className="text-gray-900 font-bold mb-2">
+                                            Price: <span className="line-through">${voucher.price}</span>{' '}
+                                            <span className="text-green-500">${discountedPrice}</span>
+                                        </p>
+                                        <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
+                                        <p className="text-gray-500 mb-4 text-sm">
+                                            Group Purchase: {voucher.groupPurchaseEnabled ? 'Enabled' : 'Disabled'}
+                                        </p>
+                                        {voucher.rewardItem && voucher.rewardItem.status === "approved" && (
+                                            <div className="mt-4">
+                                                <h3 className="text-lg font-semibold mb-2">Reward Item:</h3>
+                                                <img
+                                                    src={voucher.rewardItem.filepath}
+                                                    alt={voucher.rewardItem.name}
+                                                    className="w-32 h-32 object-cover mb-2 rounded"
+                                                />
+                                                <h4 className="text-md font-semibold">{voucher.rewardItem.name}</h4>
+                                                <p className="text-sm text-gray-600 mb-2">ID: {voucher.rewardItem.id}</p>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-between mt-4">
+                                            <Button
+                                                onClick={() => handleEdit(voucher)}
+                                                variant="default"
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleViewTransactions(voucher)}
+                                                variant="default"
+                                            >
+                                                View Transactions
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleDelete(voucher.listing_id)}
+                                                variant="destructive"
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p>No vouchers found.</p>
+                    )}
+                </div>
             </div>
         </div>
     );
