@@ -20,6 +20,10 @@ const CreateVoucherPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [imageFile, setImageFile] = useState<File | null>(null); // State for image file
+    const [enableGroupPurchase, setEnableGroupPurchase] = useState<boolean>(false);
+    const [groupSize, setGroupSize] = useState<number>(2);
+    const [groupDiscount, setGroupDiscount] = useState<number>(0);
+
 
     interface RegisteredBusiness {
         registration_id: number;
@@ -97,6 +101,11 @@ const CreateVoucherPage = () => {
             if (imageFile) {
                 formData.append('voucherImage', imageFile); // Append the selected image file
             }
+            formData.append('enableGroupPurchase', enableGroupPurchase.toString());
+            if (enableGroupPurchase) {
+                formData.append('groupSize', groupSize.toString());
+                formData.append('groupDiscount', groupDiscount.toString());
+            }
 
             const token = Cookies.get('authToken');
             if (!token) {
@@ -170,6 +179,42 @@ const CreateVoucherPage = () => {
                 />
             </div>
 
+            <div className="mb-4 flex items-center">
+                <Label htmlFor="enableGroupPurchase">Enable Group Purchase</Label>
+                <Input
+                    id="enableGroupPurchase"
+                    type="checkbox"
+                    checked={enableGroupPurchase}
+                    onChange={(e) => setEnableGroupPurchase(e.target.checked)}
+                    className="mr-2" // Add margin to the right for spacing
+                />
+            </div>
+
+            {enableGroupPurchase && (
+                <>
+                    <div className="mb-4">
+                        <Label htmlFor="groupSize">Group Size</Label>
+                        <Input
+                            id="groupSize"
+                            type="number"
+                            value={groupSize}
+                            onChange={(e) => setGroupSize(Number(e.target.value))}
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <Label htmlFor="groupDiscount">Group Discount (%)</Label>
+                        <Input
+                            id="groupDiscount"
+                            type="number"
+                            value={groupDiscount}
+                            onChange={(e) => setGroupDiscount(Number(e.target.value))}
+                        />
+                    </div>
+                </>
+            )}
+
+
             {/* New field for voucher duration */}
             <div>
                 <Label>Duration (in days):</Label>
@@ -177,7 +222,6 @@ const CreateVoucherPage = () => {
                     type="number"
                     value={duration}
                     onChange={(e) => setDuration(Number(e.target.value))}
-
                     placeholder="Enter duration in days"
                     required
                 />

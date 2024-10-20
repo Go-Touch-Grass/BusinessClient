@@ -15,6 +15,9 @@ interface Voucher {
     price: number;
     discount: number;
     voucherImage: string;
+    groupPurchaseEnabled: boolean;
+    groupSize: number;
+    groupDiscount: number;
 }
 
 interface Outlet {
@@ -320,6 +323,9 @@ const VoucherList = () => {
                                         <span className="text-green-500">${discountedPrice}</span>
                                     </p>
                                     <p className="text-gray-500 mb-4">Discount: {voucher.discount}%</p>
+                                    <p className="text-gray-500 mb-4 text-sm">
+                                        Group Purchase: {voucher.groupPurchaseEnabled ? 'Enabled' : 'Disabled'}
+                                    </p>
                                     <div className="flex justify-between">
                                         <Button
                                             onClick={() => handleEdit(voucher)}
