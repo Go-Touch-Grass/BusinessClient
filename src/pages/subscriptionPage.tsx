@@ -34,7 +34,7 @@ const BusinessSubscription = () => {
         setSuccessMessage(null);
 
         try {
-            const username = Cookies.get('username'); // Get username from cookies
+            const username = Cookies.get('username');
             if (!username) {
                 setError('No username found in cookies');
                 return;

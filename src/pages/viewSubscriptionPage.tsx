@@ -14,6 +14,7 @@ interface Subscription {
   activation_date: Date;
   expiration_date: Date;
   subscription_id: number;
+  autoRenew: boolean;
 }
 
 const ViewSubscriptions = () => {
@@ -114,7 +115,7 @@ const ViewSubscriptions = () => {
     const currentDate = new Date();
     const expiration = new Date(expirationDate);
 
-    // Ensure time zones are accounted for
+
     const diff = expiration.getTime() - currentDate.getTime();
 
     if (diff < 0) {
@@ -138,8 +139,22 @@ const ViewSubscriptions = () => {
 
   const isSubscriptionActive = (expirationDate: Date) => {
     const currentDate = new Date();
-    return currentDate < expirationDate;
+    const oneWeekBeforeExpiration = new Date(expirationDate.getTime());
+
+    // Subtract 7 days from the expiration date to get one week before
+    oneWeekBeforeExpiration.setDate(oneWeekBeforeExpiration.getDate() - 8);
+
+
+    console.log("Current Date: ", currentDate);
+    console.log("Expiration Date: ", expirationDate);
+    console.log("One Week Before Expiration: ", oneWeekBeforeExpiration);
+
+    // The button should be activated if the current date is within 7 days of expiration
+    return currentDate < expirationDate && currentDate >= oneWeekBeforeExpiration;
   };
+
+
+
 
   const renewSubscription = async (subscription: Subscription) => {
     try {
@@ -149,7 +164,7 @@ const ViewSubscriptions = () => {
         return;
       }
 
-      // Make sure you are using `response.data` to get the result from Axios
+
       const response = await api.put('/api/business/renew_subscription', {
         username,
         outlet_id: subscription.outlet_id,
@@ -157,23 +172,23 @@ const ViewSubscriptions = () => {
         distance_coverage: subscription.distance_coverage,
       });
 
-      // Check if the response was successful and log the data
+
       if (response && response.data) {
         console.log('Renewal response from backend:', response.data);
 
-        const { subscription: updatedSubscription } = response.data; // Destructure updated subscription data
+        const { subscription: updatedSubscription } = response.data;
         const currentDate = new Date();
         const newExpirationDate = new Date(currentDate);
         newExpirationDate.setMonth(currentDate.getMonth() + updatedSubscription.duration);
 
-        // Update subscriptions with the new expiration and activation date
+
         setSubscriptions((prevSubscriptions) =>
           prevSubscriptions.map((sub) =>
             sub.outlet_id === subscription.outlet_id
               ? {
                 ...sub,
-                activation_date: updatedSubscription.activation_date, // Update with backend data
-                expiration_date: updatedSubscription.expiration_date, // Update with backend data
+                activation_date: updatedSubscription.activation_date,
+                expiration_date: updatedSubscription.expiration_date,
               }
               : sub
           )
@@ -203,12 +218,12 @@ const ViewSubscriptions = () => {
       });
 
       if (response.status === 200) {
-        // Remove the subscription from the local state
+
         setSubscriptions((prevSubscriptions) =>
           prevSubscriptions.filter((sub) => sub.subscription_id !== subscription.subscription_id)
         );
 
-        // Update the hasSubscriptionPlan for the business account
+
         const updateResponse = await api.put(`/api/business/updateHasSubscription/${username}`, {
           hasSubscriptionPlan: false,
         });
@@ -219,7 +234,7 @@ const ViewSubscriptions = () => {
           console.error('Failed to update business account subscription plan status');
         }
 
-        // Update the hasSubscriptionPlan for the outlet
+
         if (subscription.outlet_id !== null) {
           const updateOutletResponse = await api.put(`/api/business/outlet/updateOutletHasSubscription/${subscription.outlet_id}`, {
             hasSubscriptionPlan: false,
@@ -318,11 +333,15 @@ const ViewSubscriptions = () => {
                   {/* Button for renewing the subscription */}
                   <button
                     onClick={() => renewSubscription(subscription)}
-                    disabled={isSubscriptionActive(subscription.expiration_date)}
-                    className={`p-2 rounded ${isSubscriptionActive(subscription.expiration_date) ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-blue-500 text-white'}`}
+                    disabled={!isSubscriptionActive(subscription.expiration_date)}
+                    className={`p-2 rounded ${!isSubscriptionActive(subscription.expiration_date)
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : 'bg-blue-500 text-white'
+                      }`}
                   >
-                    {isSubscriptionActive(subscription.expiration_date) ? 'Ongoing' : 'Renew Subscription'}
+                    {isSubscriptionActive(subscription.expiration_date) ? 'Renew Subscription' : 'Ongoing'}
                   </button>
+
 
                   {/* Button for ending the subscription */}
                   <button
@@ -344,9 +363,11 @@ const ViewSubscriptions = () => {
                 {/* Enable Auto Renew button at the top right corner */}
                 <button
                   onClick={() => enableAutoRenew(subscription)}
-                  className="absolute top-4 right-4 p-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm font-medium shadow-md hover:from-yellow-600 hover:to-yellow-700 transition duration-300 ease-in-out transform hover:scale-105"
+                  disabled={subscription.autoRenew} // Disable if autoRenewed is true
+                  className={`absolute top-4 right-4 p-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm font-medium shadow-md hover:from-yellow-600 hover:to-yellow-700 transition duration-300 ease-in-out transform hover:scale-105 ${subscription.autoRenew ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
-                  Enable Auto Renew
+                  {subscription.autoRenew ? 'Auto Renew Enabled' : 'Enable Auto Renew'}
                 </button>
               </div>
             ))}
