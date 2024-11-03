@@ -2,6 +2,17 @@ import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import api from '@/api';
 import { useRouter } from 'next/router';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Subscription {
   title: string;
@@ -74,7 +85,7 @@ const ViewSubscriptions = () => {
 
 
 
-  const enableAutoRenew = async (subscription: Subscription) => {
+  const updateAutoRenewStatus = async (subscription: Subscription, autoRenew: boolean) => {
     try {
       const token = Cookies.get('authToken');
       if (!token) {
@@ -82,7 +93,7 @@ const ViewSubscriptions = () => {
         return;
       }
       const subscriptionId = subscription.subscription_id;
-      const shouldAutoRenew = true;
+      const shouldAutoRenew = autoRenew;
 
 
       const response = await api.put(`/api/business/update_subscription`, {
@@ -100,11 +111,11 @@ const ViewSubscriptions = () => {
           )
         );
       } else {
-        setRenewError('Failed to enable Auto Renew');
+        setRenewError(`Failed to ${subscription.autoRenew ? "disable" : "enable"} Auto Renew`);
       }
     } catch (err) {
       console.error('Auto Renew error:', err);
-      setRenewError('Error enabling Auto Renew');
+      setRenewError(`Error ${subscription.autoRenew ? "disable" : "enable"} Auto Renew`);
     }
   };
 
@@ -310,6 +321,7 @@ const ViewSubscriptions = () => {
         ) : (
           <div>
             {subscriptions.map((subscription, index) => (
+
               <div key={index} className="relative mb-6 p-4 bg-green-50 rounded-lg shadow-md">
                 {/* Conditional heading based on outlet ID */}
                 {subscription.outlet_id === null ? (
@@ -369,6 +381,27 @@ const ViewSubscriptions = () => {
                 >
                   {subscription.autoRenew ? 'Auto Renew Enabled' : 'Enable Auto Renew'}
                 </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button className="absolute top-4 right-4 p-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm font-medium shadow-md hover:from-yellow-600 hover:to-yellow-700 transition duration-300 ease-in-out transform hover:scale-105">
+                      {subscription.autoRenew ? "Disable Auto Renew" : "Enable Auto Renew"}
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{subscription.autoRenew ? "Disable Auto Renew?" : "Enable Auto Renew?"}</AlertDialogTitle>
+                      {subscription.autoRenew ? <AlertDialogDescription>Your subscription will end after the expiration date and your avatar will no longer be visible to users if not renewed!</AlertDialogDescription> : <AlertDialogDescription>
+                        If insufficient gems in your account, your saved credit card will be charged automatically.
+                      </AlertDialogDescription>}
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction className="p-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm font-medium shadow-md hover:from-yellow-600 hover:to-yellow-700 transition duration-300 ease-in-out transform hover:scale-105" onClick={subscription.autoRenew ? () => updateAutoRenewStatus(subscription, false) : () => updateAutoRenewStatus(subscription, true)}>
+                        Proceed
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
           </div>
