@@ -372,15 +372,7 @@ const ViewSubscriptions = () => {
                   </button>
                 </div>
 
-                {/* Enable Auto Renew button at the top right corner */}
-                <button
-                  onClick={() => enableAutoRenew(subscription)}
-                  disabled={subscription.autoRenew} // Disable if autoRenewed is true
-                  className={`absolute top-4 right-4 p-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm font-medium shadow-md hover:from-yellow-600 hover:to-yellow-700 transition duration-300 ease-in-out transform hover:scale-105 ${subscription.autoRenew ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                >
-                  {subscription.autoRenew ? 'Auto Renew Enabled' : 'Enable Auto Renew'}
-                </button>
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <button className="absolute top-4 right-4 p-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-sm font-medium shadow-md hover:from-yellow-600 hover:to-yellow-700 transition duration-300 ease-in-out transform hover:scale-105">
