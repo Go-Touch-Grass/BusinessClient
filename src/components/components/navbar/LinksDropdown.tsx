@@ -64,6 +64,7 @@ const LinksDropdown = () => {
       { label: "View Subscriptions", href: "/viewSubscriptionPage" },
       { label: "Voucher Management", href: "/voucher" },
       { label: "Gem Purchase", href: "/gemPurchase" },
+      { label: "Gem Cashout", href: "/cashout" },
       { label: "Logout", href: "#", onClick: handleLogout },
     ];
   }
