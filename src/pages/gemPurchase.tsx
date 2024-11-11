@@ -28,35 +28,35 @@ import { Button } from "@/components/components/button";
 
 export const priceDetails = [
   {
-    id: "bundle50Gems",
+    productName: "bundle50Gems",
     price: "$5",
     gems: 50,
     bonusGems: "No Bonus",
     totalGems: 50,
   },
   {
-    id: "bundle100Gems",
+    productName: "bundle100Gems",
     price: "$10",
     gems: 100,
     bonusGems: "1 (1% extra)",
     totalGems: 101,
   },
   {
-    id: "bundle250Gems",
+    productName: "bundle250Gems",
     price: "$25",
     gems: 250,
     bonusGems: "10 (4% extra)",
     totalGems: 260,
   },
   {
-    id: "bundle500Gems",
+    productName: "bundle500Gems",
     price: "$50",
     gems: 500,
     bonusGems: "45 (9% extra)",
     totalGems: 545,
   },
   {
-    id: "bundle1000Gems",
+    productName: "bundle1000Gems",
     price: "$100",
     gems: 1000,
     bonusGems: "150 (15% extra)",
@@ -105,7 +105,7 @@ const SelectGemBundlePage = () => {
       router.push({
         pathname: "/payment",
         query: {
-          id: priceDetails[amountOfGems].id,
+          productName: priceDetails[amountOfGems].productName,
           gems: priceDetails[amountOfGems].totalGems,
           price: Number(priceDetails[amountOfGems].price.substring(1)),
           recurring: isRecurring,

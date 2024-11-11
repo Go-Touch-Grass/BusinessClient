@@ -23,7 +23,7 @@ const PaymentPage: React.FC = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [id, setId] = useState<string | null>(null);
+  const [productName, setProductName] = useState<string | null>(null);
   const [gems, setGems] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
   const [isRecurring, setIsRecurring] = useState<boolean>(false);
@@ -32,7 +32,7 @@ const PaymentPage: React.FC = () => {
 
   useEffect(() => {
     if (router.query.gems && router.query.price) {
-      setId(router.query.id as string);
+      setProductName(router.query.productName as string);
       setGems(parseInt(router.query.gems as string, 10));
       setPrice(parseInt(router.query.price as string, 10));
       setIsRecurring(router.query.recurring === "true");
@@ -129,31 +129,57 @@ const PaymentPage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     setPaymentProcessing(true);
-
-    if (!gems || !price) {
+  
+    if (!productName || !gems || !price) {
       setErrorMessage("Invalid gem bundle");
       setPaymentProcessing(false);
       return;
     }
-
+  
     try {
-      const { clientSecret, paymentIntentId } = await api
-        .post("/api/payment/create-payment-intent", {
-          amount: price * 100, // in cents
-          currency: "sgd",
-        })
-        .then((response) => response.data);
-
-      if (!clientSecret || !paymentIntentId) {
-        setErrorMessage("Error creating payment intent");
-        setPaymentProcessing(false);
-        return;
+      let clientSecret: string;
+      let paymentIntentId: string;
+  
+      // If it's a recurring payment, call createSubscription API
+      if (isRecurring) {
+        const { clientSecret: subscriptionClientSecret, subscriptionId } = await api
+          .post("/api/payment/create-stripe-subscription", {
+            productName: productName
+          })
+          .then((response) => response.data);
+  
+        if (!subscriptionClientSecret || !subscriptionId) {
+          setErrorMessage("Error creating subscription");
+          setPaymentProcessing(false);
+          return;
+        }
+  
+        clientSecret = subscriptionClientSecret;
+        paymentIntentId = subscriptionId;  // or use a relevant ID from the response
+  
+      } else {
+        // Non-recurring payment: create a payment intent
+        const { clientSecret: paymentIntentClientSecret, paymentIntentId: intentId } = await api
+          .post("/api/payment/create-payment-intent", {
+            amount: price * 100, // in cents
+            currency: "sgd",
+          })
+          .then((response) => response.data);
+  
+        if (!paymentIntentClientSecret || !intentId) {
+          setErrorMessage("Error creating payment intent");
+          setPaymentProcessing(false);
+          return;
+        }
+  
+        clientSecret = paymentIntentClientSecret;
+        paymentIntentId = intentId;
       }
-
+  
       const paymentSuccessful = savedPaymentMethodId
         ? await payUsingSavedMethod(clientSecret, paymentIntentId)
         : await payUsingCardEntry(clientSecret, paymentIntentId);
-
+  
       if (!paymentSuccessful) {
         setPaymentProcessing(false);
       }
@@ -162,6 +188,7 @@ const PaymentPage: React.FC = () => {
       setPaymentProcessing(false);
     }
   };
+  
 
   const handleDeleteSavedMethod = async () => {
     try {
