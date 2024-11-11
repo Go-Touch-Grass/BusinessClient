@@ -23,15 +23,19 @@ const PaymentPage: React.FC = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [productName, setProductName] = useState<string | null>(null);
   const [gems, setGems] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
+  const [isRecurring, setIsRecurring] = useState<boolean>(false);
   const [savedPaymentMethodId, setSavedPaymentMethodId] = useState<any | null>(null);
   const [savedPaymentMethod, setSavedPaymentMethod] = useState<any | null>(null);
 
   useEffect(() => {
     if (router.query.gems && router.query.price) {
+      setProductName(router.query.productName as string);
       setGems(parseInt(router.query.gems as string, 10));
       setPrice(parseInt(router.query.price as string, 10));
+      setIsRecurring(router.query.recurring === "true");
     }
   }, [router.query]);
 
@@ -53,101 +57,138 @@ const PaymentPage: React.FC = () => {
     fetchSavedPaymentMethod();
   }, [router.query.businessId]);
 
+  const payUsingSavedMethod = async (clientSecret: string, paymentIntentId: string) => {
+    try {
+      const { error, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
+        payment_method: savedPaymentMethodId,
+      });
+
+      if (error) {
+        setErrorMessage(error.message || "Payment failed");
+        return false;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        await api.post("/api/business/verify_topup", {
+          paymentIntentId,
+          gemsAdded: gems,
+        });
+        setSuccessMessage("Payment and top-up succeeded!");
+        return true;
+      }
+    } catch (error) {
+      setErrorMessage("Error processing payment using saved method.");
+    }
+    return false;
+  };
+
+  const payUsingCardEntry = async (clientSecret: string, paymentIntentId: string) => {
+    try {
+      const cardElement = elements?.getElement(CardElement);
+      if (!cardElement) {
+        setErrorMessage("Card information not found.");
+        return false;
+      }
+
+      const { email, username } = await api
+        .get("/api/payment/get-user-email-and-username")
+        .then((response) => response.data);
+
+      const { error, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            email: email, // Fetch user email from API
+            name: username, // Fetch user name from API
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message || "Payment failed");
+        return false;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        await api.post("/api/payment/save-payment-method-id", {
+          paymentMethodId: paymentIntent.payment_method,
+        });
+
+        await api.post("/api/business/verify_topup", {
+          paymentIntentId,
+          gemsAdded: gems,
+        });
+        setSuccessMessage("Payment and top-up succeeded!");
+        return true;
+      }
+    } catch (error) {
+      setErrorMessage("Error processing payment using card entry.");
+    }
+    return false;
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     setPaymentProcessing(true);
-
-    if (!gems || !price) {
+  
+    if (!productName || !gems || !price) {
       setErrorMessage("Invalid gem bundle");
       setPaymentProcessing(false);
       return;
     }
-
+  
     try {
-      const { clientSecret, paymentIntentId } = await api
-        .post("/api/payment/create-payment-intent", {
-          amount: price * 100, // in cents
-          currency: "sgd",
-        })
-        .then((response) => response.data);
-
-      if (!clientSecret || !paymentIntentId) {
-        setErrorMessage("Error creating payment intent");
-        setPaymentProcessing(false);
-        return;
-      }
-
-      // Check if the user has a saved payment method
-      const { paymentMethodId } = await api
-        .get("/api/payment/get-payment-method-id")
-        .then((response) => response.data);
-
-      if (paymentMethodId) {
-        // Use saved payment method
-        const { error, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
-          payment_method: paymentMethodId,
-        });
-
-        if (error) {
-          setErrorMessage(error.message || "Payment failed");
-          setPaymentProcessing(false);
-          return;
-        }
-
-        if (paymentIntent?.status === "succeeded") {
-          await api.post("/api/business/verify_topup", {
-            paymentIntentId,
-            gemsAdded: gems,
-          });
-          setSuccessMessage("Payment and top-up succeeded!");
-        }
-      } else {
-        // No saved payment method, proceed with card entry
-        const cardElement = elements?.getElement(CardElement);
-        if (!cardElement) {
-          setErrorMessage("Card information not found.");
-          setPaymentProcessing(false);
-          return;
-        }
-
-        const { email, username } = await api
-          .get("/api/payment/get-user-email-and-username")
+      let clientSecret: string;
+      let paymentIntentId: string;
+  
+      // If it's a recurring payment, call createSubscription API
+      if (isRecurring) {
+        const { clientSecret: subscriptionClientSecret, subscriptionId } = await api
+          .post("/api/payment/create-stripe-subscription", {
+            productName: productName
+          })
           .then((response) => response.data);
-
-        const { error, paymentIntent } = await stripe!.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              email: email, // Fetch user email from API
-              name: username, // Fetch user name from API
-            }
-          },
-        });
-
-        if (error) {
-          setErrorMessage(error.message || "Payment failed");
+  
+        if (!subscriptionClientSecret || !subscriptionId) {
+          setErrorMessage("Error creating subscription");
           setPaymentProcessing(false);
           return;
         }
-
-        if (paymentIntent?.status === "succeeded") {
-          await api.post("/api/payment/save-payment-method-id", {
-            paymentMethodId: paymentIntent.payment_method,
-          });
-
-          await api.post("/api/business/verify_topup", {
-            paymentIntentId,
-            gemsAdded: gems,
-          });
-          setSuccessMessage("Payment and top-up succeeded!");
+  
+        clientSecret = subscriptionClientSecret;
+        paymentIntentId = subscriptionId;  // or use a relevant ID from the response
+  
+      } else {
+        // Non-recurring payment: create a payment intent
+        const { clientSecret: paymentIntentClientSecret, paymentIntentId: intentId } = await api
+          .post("/api/payment/create-payment-intent", {
+            amount: price * 100, // in cents
+            currency: "sgd",
+          })
+          .then((response) => response.data);
+  
+        if (!paymentIntentClientSecret || !intentId) {
+          setErrorMessage("Error creating payment intent");
+          setPaymentProcessing(false);
+          return;
         }
+  
+        clientSecret = paymentIntentClientSecret;
+        paymentIntentId = intentId;
+      }
+  
+      const paymentSuccessful = savedPaymentMethodId
+        ? await payUsingSavedMethod(clientSecret, paymentIntentId)
+        : await payUsingCardEntry(clientSecret, paymentIntentId);
+  
+      if (!paymentSuccessful) {
+        setPaymentProcessing(false);
       }
     } catch (error) {
       setErrorMessage("An error occurred during payment processing.");
-    } finally {
       setPaymentProcessing(false);
     }
   };
-
+  
 
   const handleDeleteSavedMethod = async () => {
     try {
@@ -198,8 +239,13 @@ const PaymentPage: React.FC = () => {
             <b>Card Details </b>
             <CardElement />
             <Button disabled={!stripe || paymentProcessing} onClick={handleSubmit}>
-              {paymentProcessing ? "Processing..." : "Pay Now"}
+              {paymentProcessing
+                ? "Processing..."
+                : isRecurring
+                  ? "Subscribe For Monthly Payments"
+                  : "Pay Now"}
             </Button>
+
           </div>
         )}
       </div>
