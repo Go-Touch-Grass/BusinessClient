@@ -28,30 +28,35 @@ import { Button } from "@/components/components/button";
 
 export const priceDetails = [
   {
+    id: "bundle50Gems",
     price: "$5",
     gems: 50,
     bonusGems: "No Bonus",
     totalGems: 50,
   },
   {
+    id: "bundle100Gems",
     price: "$10",
     gems: 100,
     bonusGems: "1 (1% extra)",
     totalGems: 101,
   },
   {
+    id: "bundle250Gems",
     price: "$25",
     gems: 250,
     bonusGems: "10 (4% extra)",
     totalGems: 260,
   },
   {
+    id: "bundle500Gems",
     price: "$50",
     gems: 500,
     bonusGems: "45 (9% extra)",
     totalGems: 545,
   },
   {
+    id: "bundle1000Gems",
     price: "$100",
     gems: 1000,
     bonusGems: "150 (15% extra)",
@@ -63,6 +68,7 @@ const SelectGemBundlePage = () => {
   const token = Cookies.get("authToken");
 
   const [amountOfGems, setAmountOfGems] = useState<string>();
+  const [isRecurring, setIsRecurring] = useState<boolean>(false);
   // Use the token to make API requests or identify business_id
   const fetchBusinessData = async () => {
     try {
@@ -99,8 +105,10 @@ const SelectGemBundlePage = () => {
       router.push({
         pathname: "/payment",
         query: {
+          id: priceDetails[amountOfGems].id,
           gems: priceDetails[amountOfGems].totalGems,
           price: Number(priceDetails[amountOfGems].price.substring(1)),
+          recurring: isRecurring,
         },
       });
     }
@@ -172,6 +180,15 @@ const SelectGemBundlePage = () => {
                 </div>
               </div>
             )}
+            <div className="flex flex-row items-center gap-4">
+              <input
+                type="checkbox"
+                id="recurring"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+              />
+              <label htmlFor="recurring">Make this a monthly recurring purchase</label>
+            </div>
             <Button disabled={!amountOfGems} onClick={handlePayment}>
               Proceed to Payment
             </Button>
