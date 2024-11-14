@@ -98,7 +98,7 @@ const RedemptionRate = () => {
               <p className="text-gray-500">Vouchers Redeemed: {voucher.vouchersRedeemed}</p>
               <p className="text-gray-500">Vouchers Unredeemed: {voucher.vouchersUnredeemed}</p>
               <p className="text-gray-900 font-bold">
-                Redemption Rate: <span className="text-blue-500">{voucher.redemptionRate}%</span>
+                Redemption Rate: <span className="text-green-700">{voucher.redemptionRate}%</span>
               </p>
             </div>
           </div>
