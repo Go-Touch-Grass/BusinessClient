@@ -150,6 +150,12 @@ const ViewSubscriptions = () => {
 
   const isSubscriptionActive = (expirationDate: Date) => {
     const currentDate = new Date();
+
+    // Ensure expirationDate is a Date object
+    if (!(expirationDate instanceof Date)) {
+      expirationDate = new Date(expirationDate);
+    }
+
     const oneWeekBeforeExpiration = new Date(expirationDate.getTime());
 
     // Subtract 7 days from the expiration date to get one week before
@@ -161,7 +167,7 @@ const ViewSubscriptions = () => {
     console.log("One Week Before Expiration: ", oneWeekBeforeExpiration);
 
     // The button should be activated if the current date is within 7 days of expiration
-    return currentDate < expirationDate && currentDate >= oneWeekBeforeExpiration;
+    return currentDate > expirationDate || currentDate >= oneWeekBeforeExpiration;
   };
 
 
@@ -335,11 +341,14 @@ const ViewSubscriptions = () => {
                 <p>Distance Coverage: {subscription.distance_coverage} km</p>
                 <p>Total Cost: ${subscription.total_cost}</p>
                 <p>Total Gems: {subscription.total_gem} Gems</p>
-                <p>Activation Date: {new Date(subscription.activation_date).toLocaleDateString()}</p>
-                <p>Expiration Date: {new Date(subscription.expiration_date).toLocaleDateString()}</p>
 
-                <p className="text-green-700">{calculateTimeLeft(subscription.expiration_date)}</p>
+                <h1 style={{ fontSize: '1.3em', fontWeight: 'bold', color: '#333' }}>
+                  Expiration Date: {new Date(subscription.expiration_date).toLocaleDateString()}
+                </h1>
 
+                <p className="text-green-700 text-lg underline">
+                  {calculateTimeLeft(subscription.expiration_date)}
+                </p>
                 {/* Buttons section */}
                 <div className="flex justify-between mt-4">
                   {/* Button for renewing the subscription */}
