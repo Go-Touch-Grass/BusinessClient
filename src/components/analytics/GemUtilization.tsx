@@ -44,7 +44,7 @@ const GemUtilization = () => {
   const chartData = aggregateDataByMonth(data);
 
   return (
-    <div>
+    <div style={{ textAlign: 'center', width: '100%', height: '400px' }}>
       <h1>Gem Utilization</h1>
       {chartData.length > 0 ? (
         <ResponsiveContainer width="100%" height={400}>
