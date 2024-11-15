@@ -90,11 +90,13 @@ const Cashout = () => {
     }
 
     try {
-      const cashoutAmount = Number(cashoutOptions[selectedCashoutOption].cash.substring(1));
+      const currencyAmount = Number(cashoutOptions[selectedCashoutOption].cash.substring(1));
+      const gemAmount = cashoutOptions[selectedCashoutOption].gems;
       await api.post("/api/payment/cashout", {
-        amount: cashoutAmount,
+        currency_amount: currencyAmount,
+        gem_amount: gemAmount,
       });
-      alert(`Successfully cashed out $${cashoutAmount}`);
+      alert(`Successfully cashed out $${currencyAmount}`);
       setBalance((prev) => prev - selectedGems);
       setSelectedCashoutOption("");
     } catch (error) {
