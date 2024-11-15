@@ -5,7 +5,7 @@ import MostPopularVoucher from "@/components/analytics/MostPopularVoucher";
 import RedemptionRate from "@/components/analytics/RedemptionRate";
 import TotalSales from "@/components/analytics/TotalSales";
 import GemUtilization from "@/components/analytics/GemUtilization";
-import Transactions from "@/components/analytics/TotalSales";
+import Transactions from "@/components/analytics/Transactions";
 import Engagement from "@/components/analytics/Engagement";
 import GroupPurchase from "@/components/analytics/GroupPurchase";
 
@@ -52,7 +52,7 @@ const Analytics = () => {
               { id: "redemptionRate", label: "Voucher Redemption Rate" },
               { id: "totalSales", label: "Total Sales" },
               { id: "gemUtilization", label: "Gem Utilization" },
-              { id: "transactions", label: "Number of Transactions" },
+              { id: "transactions", label: "Transaction Summary" },
               { id: "engagement", label: "Engagement with Avatar" },
               { id: "groupPurchase", label: "Group Purchase Analytics" },
             ].map((tab) => (
