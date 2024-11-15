@@ -1,57 +1,99 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/Register/ui/button";
 import withAuth from "./withAuth";
-import { ChatMessage, createChatCompletion, createStreamingChatCompletion } from '@/api/chatApi';
+import { ChatMessage, createChatCompletion } from '@/api/chatApi';
+
+// Add new types
+interface ChatOption {
+    id: number;
+    text: string;
+    type: 'dialogue' | 'shop' | 'farewell';
+}
+
+interface AssistantResponse {
+    npc_response: string;
+    available_options: ChatOption[];
+}
 
 const Chat: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [inputMessage, setInputMessage] = useState('');
-    const [systemPrompt, setSystemPrompt] = useState('');
+    const [locationDescription, setLocationDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [availableOptions, setAvailableOptions] = useState<ChatOption[]>([]);
+    const [hasStarted, setHasStarted] = useState(false);
 
-    const handleSendMessage = async () => {
-        if (!inputMessage.trim() || isLoading) return;
+    const handleSendMessage = async (selectedOption?: ChatOption) => {
+        if (!selectedOption || isLoading || !locationDescription.trim()) return;
 
         const userMessage: ChatMessage = {
             role: 'user',
-            content: inputMessage
+            content: selectedOption.text
         };
 
         setMessages(prev => [...prev, userMessage]);
-        setInputMessage('');
         setIsLoading(true);
+        setAvailableOptions([]);
 
         try {
-            let fullResponse = '';
-            await createStreamingChatCompletion(
-                {
-                    messages: [...messages, userMessage],
-                    systemPrompt: systemPrompt.trim() || undefined
-                },
-                (data) => {
-                    fullResponse += data.message || data.content || '';
-                    setMessages(prev => {
-                        const newMessages = [...prev];
-                        const lastMessage = newMessages[newMessages.length - 1];
-                        if (lastMessage && lastMessage.role === 'assistant') {
-                            lastMessage.content = fullResponse;
-                            return [...newMessages];
-                        } else {
-                            return [...newMessages, { role: 'assistant', content: fullResponse }];
-                        }
-                    });
+            const response = await createChatCompletion({
+                messages: [...messages, userMessage],
+                locationDescription: locationDescription
+            });
+
+            // Check if response.message is already an object
+            let parsedResponse: AssistantResponse;
+            if (typeof response.message === 'string') {
+                try {
+                    parsedResponse = JSON.parse(response.message);
+                } catch (parseError) {
+                    console.error('Parse error:', parseError);
+                    throw new Error('Invalid response format');
                 }
-            );
+            } else {
+                parsedResponse = response.message;
+            }
+
+            // Update messages and options with the parsed response
+            setMessages(prev => [...prev, { 
+                role: 'assistant', 
+                content: parsedResponse.npc_response 
+            }]);
+            setAvailableOptions(parsedResponse.available_options || []);
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('Error handling message:', error);
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: 'Sorry, I encountered an error. Please try again.'
             }]);
+            setAvailableOptions([]);
         } finally {
             setIsLoading(false);
         }
     };
+
+    const startConversation = async () => {
+        setHasStarted(true);
+        const initialMessage: ChatMessage = {
+            role: 'user',
+            content: 'Hello'
+        };
+        await handleSendMessage({ id: 0, text: 'Hello', type: 'dialogue' });
+    };
+
+    const renderOptions = () => (
+        <div className="flex flex-wrap gap-2 mt-4">
+            {availableOptions.map((option) => (
+                <Button
+                    key={option.id}
+                    onClick={() => handleSendMessage(option)}
+                    variant={option.type === 'farewell' ? 'destructive' : option.type === 'shop' ? 'outline' : 'default'}
+                    className="text-sm"
+                >
+                    {option.text}
+                </Button>
+            ))}
+        </div>
+    );
 
     return (
         <div className="container mx-auto p-6 max-w-4xl">
@@ -60,18 +102,19 @@ const Chat: React.FC = () => {
             </h1>
 
             <div className="flex gap-4">
-                {/* System Prompt Sidebar */}
+                {/* Location Description Sidebar */}
                 <div className="w-1/3">
                     <div className="bg-white rounded-lg shadow-md p-4">
-                        <h2 className="text-lg font-semibold mb-2">System Prompt</h2>
+                        <h2 className="text-lg font-semibold mb-2">Location Description</h2>
                         <textarea
-                            value={systemPrompt}
-                            onChange={(e) => setSystemPrompt(e.target.value)}
-                            placeholder="Optional: Set a system prompt to guide the AI's behavior..."
+                            value={locationDescription}
+                            onChange={(e) => setLocationDescription(e.target.value)}
+                            placeholder="Required: Describe the location or context..."
                             className="w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            disabled={hasStarted}
                         />
                         <p className="text-sm text-gray-500 mt-2">
-                            The system prompt helps define the AI's behavior and context.
+                            Please provide a description of the location or context for the conversation.
                         </p>
                     </div>
                 </div>
@@ -104,25 +147,19 @@ const Chat: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Input area */}
-                    <div className="border-t p-4 flex gap-2">
-                        <input
-                            type="text"
-                            value={inputMessage}
-                            onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') handleSendMessage();
-                            }}
-                            placeholder="Type your message..."
-                            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={isLoading}
-                        />
-                        <Button 
-                            onClick={handleSendMessage}
-                            disabled={isLoading || !inputMessage.trim()}
-                        >
-                            Send
-                        </Button>
+                    {/* Options or Start Button */}
+                    <div className="px-4 py-4 border-t">
+                        {!hasStarted ? (
+                            <Button 
+                                onClick={startConversation}
+                                disabled={!locationDescription.trim() || isLoading}
+                                className="w-full"
+                            >
+                                Start Conversation
+                            </Button>
+                        ) : (
+                            renderOptions()
+                        )}
                     </div>
                 </div>
             </div>
