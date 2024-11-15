@@ -45,7 +45,7 @@ const Analytics = () => {
   
       <div className="flex">
         {/* Sidebar Navigation */}
-        <nav className="w-full md:w-1/4 bg-gray-100 h-screen p-6 shadow-lg">
+        <nav className="w-fit bg-gray-100 h-screen p-6 shadow-lg">
           <ul className="space-y-4">
             {[
               { id: "mostPopularVoucher", label: "Most Popular Voucher" },
