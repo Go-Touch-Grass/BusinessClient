@@ -170,11 +170,9 @@ const CreateAvatar: React.FC = () => {
 			console.log('Created avatar:', response.avatar);
 			console.log('Avatar ID:', response.avatarId);
 
-			router.push(`/avatar/prompt/${response.avatarId}`);
-
-			// setTimeout(() => {
-			// 	router.push('/viewAvatars');
-			// }, 2000);
+			setTimeout(() => {
+				router.push(`/avatar/prompt/${response.avatarId}`);
+			}, 2000);
 		} catch (error) {
 			console.error('Error creating avatar:', error);
 			setError('Failed to create avatar');
