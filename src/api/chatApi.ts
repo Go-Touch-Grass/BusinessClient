@@ -12,6 +12,11 @@ export interface ChatResponse {
     content?: string;
 }
 
+export interface ChatCompletionParams {
+    messages: ChatMessage[];
+    systemPrompt?: string;
+}
+
 const getAuthToken = (): string | null => {
     return Cookies.get("authToken") || null;
 };
@@ -21,11 +26,11 @@ const authHeader = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const createChatCompletion = async (messages: ChatMessage[]): Promise<ChatResponse> => {
+export const createChatCompletion = async (params: ChatCompletionParams): Promise<ChatResponse> => {
     try {
         const response = await api.post(
             "/api/chat",
-            { messages },
+            params,
             { headers: authHeader() }
         );
         return response.data;
@@ -36,7 +41,7 @@ export const createChatCompletion = async (messages: ChatMessage[]): Promise<Cha
 };
 
 export const createStreamingChatCompletion = async (
-    messages: ChatMessage[],
+    params: ChatCompletionParams,
     onMessage: (data: ChatResponse) => void,
     onDone?: () => void
 ): Promise<void> => {
@@ -49,7 +54,7 @@ export const createStreamingChatCompletion = async (
                 'Accept': 'text/event-stream',
                 ...(token ? { Authorization: `Bearer ${token}` } : {})
             },
-            body: JSON.stringify({ messages })
+            body: JSON.stringify(params)
         });
 
         if (!response.ok) {
