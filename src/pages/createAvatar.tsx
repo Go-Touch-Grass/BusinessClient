@@ -170,9 +170,11 @@ const CreateAvatar: React.FC = () => {
 			console.log('Created avatar:', response.avatar);
 			console.log('Avatar ID:', response.avatarId);
 
-			setTimeout(() => {
-				router.push('/viewAvatars');
-			}, 2000);
+			router.push(`/avatar/prompt/${response.avatarId}`);
+
+			// setTimeout(() => {
+			// 	router.push('/viewAvatars');
+			// }, 2000);
 		} catch (error) {
 			console.error('Error creating avatar:', error);
 			setError('Failed to create avatar');
@@ -248,7 +250,7 @@ const CreateAvatar: React.FC = () => {
 					disabled={isLoading}
 					className="w-full md:w-auto px-4 py-2"
 				>
-					{isLoading ? "Creating..." : "Finish Creating Avatar"}
+					{isLoading ? "Creating..." : "Next"}
 				</Button>
 			</div>
 

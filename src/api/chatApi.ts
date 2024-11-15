@@ -17,6 +17,17 @@ export interface ChatCompletionParams {
     locationDescription: string;
 }
 
+export interface AvatarPrompt {
+    id?: number;
+    prompt: string;
+    avatar?: any;
+}
+
+export interface CreatePromptParams {
+    avatarId: number | string;
+    prompt: string;
+}
+
 const getAuthToken = (): string | null => {
     return Cookies.get("authToken") || null;
 };
@@ -36,6 +47,47 @@ export const createChatCompletion = async (params: ChatCompletionParams): Promis
         return response.data;
     } catch (error) {
         console.error("Error creating chat completion:", error);
+        throw handleApiError(error);
+    }
+};
+
+export const createAvatarPrompt = async (params: CreatePromptParams): Promise<AvatarPrompt> => {
+    try {
+        const response = await api.post(
+            "/api/avatars/business/prompt",
+            params,
+            { headers: authHeader() }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error creating avatar prompt:", error);
+        throw handleApiError(error);
+    }
+};
+
+export const updateAvatarPrompt = async (promptId: number, prompt: string): Promise<AvatarPrompt> => {
+    try {
+        const response = await api.put(
+            `/api/avatars/business/prompt/${promptId}`,
+            { prompt },
+            { headers: authHeader() }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error updating avatar prompt:", error);
+        throw handleApiError(error);
+    }
+};
+
+export const getAvatarPrompt = async (avatarId: number | string): Promise<AvatarPrompt> => {
+    try {
+        const response = await api.get(
+            `/api/avatars/business/prompt/${avatarId}`,
+            { headers: authHeader() }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching avatar prompt:", error);
         throw handleApiError(error);
     }
 };

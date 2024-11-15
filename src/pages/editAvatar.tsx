@@ -189,7 +189,7 @@ const EditAvatar: React.FC = () => {
 				/>
 			</div>
 
-			<div className="p-10 mt-20 flex justify-center">
+			<div className="p-10 mt-20 flex justify-center gap-4">
 				<Button
 					onClick={handleSaveChanges}
 					disabled={isLoading}
@@ -197,13 +197,20 @@ const EditAvatar: React.FC = () => {
 				>
 					{isLoading ? "Saving..." : "Save Changes"}
 				</Button>
+				<Button
+					onClick={() => router.push(`/avatar/prompt/${avatarId}`)}
+					variant="outline"
+					className="w-full md:w-auto px-4 py-2"
+				>
+					Edit Chat Prompt
+				</Button>
 			</div>
 
 			{error && (
 				<p className="text-red-500 text-center mt-4">
 					{error}
 				</p>
-			)}
+				)}
 			{successMessage && (
 				<p className="text-green-500 text-center mt-4">
 					{successMessage}
