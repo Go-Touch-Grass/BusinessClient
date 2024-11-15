@@ -96,6 +96,10 @@ const AvatarManagement: React.FC = () => {
 		router.push('/viewCustomItems');
 	};
 
+	const handleChat = () => {
+		router.push('/chat');
+	};
+
 	return (
 		<div className="container mx-auto p-6">
 			<h1 className="text-4xl font-bold text-zinc-700 text-center mb-6">
@@ -125,6 +129,11 @@ const AvatarManagement: React.FC = () => {
 					</Button>
 					<Button onClick={handleViewCustomItems} variant="outline">
 						View All Custom Assets
+					</Button>
+				</div>
+				<div className="flex justify-center space-x-4">
+					<Button onClick={handleChat} variant="outline">
+						Chat with AI Assistant
 					</Button>
 				</div>
 			</div>
