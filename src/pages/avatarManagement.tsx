@@ -133,7 +133,7 @@ const AvatarManagement: React.FC = () => {
 				</div>
 				<div className="flex justify-center space-x-4">
 					<Button onClick={handleChat} variant="outline">
-						Chat with AI Assistant
+						AI Chat
 					</Button>
 				</div>
 			</div>

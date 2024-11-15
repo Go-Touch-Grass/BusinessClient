@@ -40,30 +40,29 @@ const Chat: React.FC = () => {
                 locationDescription: locationDescription
             });
 
-            // Check if response.message is already an object
             let parsedResponse: AssistantResponse;
             if (typeof response.message === 'string') {
-                try {
-                    parsedResponse = JSON.parse(response.message);
-                } catch (parseError) {
-                    console.error('Parse error:', parseError);
-                    throw new Error('Invalid response format');
-                }
+                parsedResponse = JSON.parse(response.message);
             } else {
                 parsedResponse = response.message;
             }
 
-            // Update messages and options with the parsed response
-            setMessages(prev => [...prev, { 
-                role: 'assistant', 
-                content: parsedResponse.npc_response 
+            // Store the full JSON response
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: JSON.stringify(parsedResponse)  // Store full JSON
             }]);
+
+            // Update available options
             setAvailableOptions(parsedResponse.available_options || []);
         } catch (error) {
             console.error('Error handling message:', error);
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: 'Sorry, I encountered an error. Please try again.'
+                content: JSON.stringify({
+                    npc_response: 'Sorry, I encountered an error. Please try again.',
+                    available_options: []
+                })
             }]);
             setAvailableOptions([]);
         } finally {
@@ -80,6 +79,19 @@ const Chat: React.FC = () => {
         await handleSendMessage({ id: 0, text: 'Hello', type: 'dialogue' });
     };
 
+    // Update message display component
+    const renderMessageContent = (message: ChatMessage) => {
+        if (message.role === 'user') {
+            return message.content;
+        }
+
+        try {
+            const parsed = JSON.parse(message.content);
+            return parsed.npc_response;
+        } catch {
+            return message.content;
+        }
+    };
     const renderOptions = () => (
         <div className="flex flex-wrap gap-2 mt-4">
             {availableOptions.map((option) => (
@@ -98,7 +110,7 @@ const Chat: React.FC = () => {
     return (
         <div className="container mx-auto p-6 max-w-4xl">
             <h1 className="text-4xl font-bold text-zinc-700 text-center mb-6">
-                Chat with AI Assistant
+                Chat
             </h1>
 
             <div className="flex gap-4">
@@ -126,18 +138,16 @@ const Chat: React.FC = () => {
                         {messages.map((message, index) => (
                             <div
                                 key={index}
-                                className={`p-3 rounded-lg ${
-                                    message.role === 'user'
+                                className={`p-3 rounded-lg ${message.role === 'user'
                                         ? 'bg-blue-100 ml-auto'
                                         : 'bg-gray-100'
-                                } max-w-[80%] ${
-                                    message.role === 'user' ? 'ml-auto' : 'mr-auto'
-                                }`}
+                                    } max-w-[80%] ${message.role === 'user' ? 'ml-auto' : 'mr-auto'
+                                    }`}
                             >
                                 <p className="text-sm font-semibold mb-1">
                                     {message.role === 'user' ? 'You' : 'Assistant'}
                                 </p>
-                                <p className="text-gray-800">{message.content}</p>
+                                <p className="text-gray-800">{renderMessageContent(message)}</p>
                             </div>
                         ))}
                         {isLoading && (
@@ -150,7 +160,7 @@ const Chat: React.FC = () => {
                     {/* Options or Start Button */}
                     <div className="px-4 py-4 border-t">
                         {!hasStarted ? (
-                            <Button 
+                            <Button
                                 onClick={startConversation}
                                 disabled={!locationDescription.trim() || isLoading}
                                 className="w-full"
