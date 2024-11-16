@@ -27,6 +27,7 @@ const TuneChatPrompt: React.FC = () => {
     const [promptId, setPromptId] = useState<number | null>(null);
     const [availableOptions, setAvailableOptions] = useState<ChatOption[]>([]);
     const [hasStarted, setHasStarted] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     useEffect(() => {
         if (avatarId) {
@@ -150,6 +151,7 @@ const TuneChatPrompt: React.FC = () => {
 
         setIsLoading(true);
         setError(null);
+        setSaveSuccess(false);
 
         try {
             const promptData: CreatePromptParams = {
@@ -163,6 +165,7 @@ const TuneChatPrompt: React.FC = () => {
                 const response = await createAvatarPrompt(promptData);
                 setPromptId(response.id);
             }
+            setSaveSuccess(true);
         } catch (error) {
             console.error('Error saving location:', error);
             setError('Failed to save location description');
@@ -263,6 +266,9 @@ const TuneChatPrompt: React.FC = () => {
 
             {error && (
                 <p className="text-red-500 mt-4">{error}</p>
+            )}
+            {saveSuccess && (
+                <p className="text-green-500 mt-4">Prompt saved successfully!</p>
             )}
         </div>
     );
