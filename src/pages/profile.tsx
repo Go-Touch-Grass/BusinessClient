@@ -9,7 +9,16 @@ import withAuth from "./withAuth";
 import { useAuth } from "./AuthContext";
 import ConfirmationModal from "../components/Profile/confirmationModal";
 import { DataTable } from "@/components/components/global/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown } from "lucide-react";
 
+export type Transaction = {
+  currency_amount: string;
+  gems_added: number;
+  gems_deducted: number;
+  transaction_date: string;
+  transaction_id: number;
+};
 export interface BusinessAccount {
   firstName: string;
   lastName: string;
@@ -18,6 +27,7 @@ export interface BusinessAccount {
   gem_balance: number;
   banStatus: boolean;
   banRemarks: string;
+  transactions: Transaction[]
 }
 
 interface Outlet {
@@ -37,6 +47,78 @@ interface BusinessRegistration {
     remarks: string;
     proof?: string;
 }
+
+const transactionColumns: ColumnDef<Transaction>[] = [
+  {
+    accessorKey: "transaction_date",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ getValue }) => {
+      const dateValue = getValue() as string;
+      return dateValue.substring(0, 10); // Display only the first 5 characters
+    },
+  },
+
+  {
+    accessorKey: "currency_amount",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Currency Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
+  {
+    accessorKey: "gems_added",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Gems Added
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
+  {
+    accessorKey: "gems_deducted",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Gems Deducted
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ getValue }) => {
+      const value = getValue();
+      if (value == null) {
+        return 0;
+      }
+      return value;
+    },
+  },
+];
+
 
 const ProfilePage: React.FC = () => {
   const { isLoggedIn, setIsLoggedIn } = useAuth();
@@ -58,7 +140,8 @@ const ProfilePage: React.FC = () => {
     username: "",
     gem_balance: 0,
     banStatus: false,
-    banRemarks: ""
+    banRemarks: "",
+    transactions:[]
   });
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null); // Store the selected outlet for deletion
   const [isOutletModalVisible, setIsOutletModalVisible] =
@@ -83,6 +166,7 @@ const ProfilePage: React.FC = () => {
             "profile image retrieved",
             response.data.business.profileImage
           );
+          console.log(response.data)
           setProfileImage(response.data.business.profileImage); // Set the profile image
           setOutlets(response.data.outlets);
           setBusinessRegistration(response.data.registeredBusiness); // Set the business registration data
@@ -287,6 +371,8 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  //recurring gem purchase for any auto renewal subscriptions
+
   return (
     <div className="px-4 space-y-6 md:px-6">
       <header className="space-y-1.5">
@@ -437,7 +523,7 @@ const ProfilePage: React.FC = () => {
             )}
           </div>
         </div>
-        <hr />
+        <hr className="flex my-10"/>
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Your Outlets</h2>
@@ -507,10 +593,11 @@ const ProfilePage: React.FC = () => {
                     </div>
                 </div>
                 </div>
+                <hr className="flex my-10"/>
         <div className="space-y-6">
           <b>Past Transactions</b>
           <p>Current Gem Balance: {formData.gem_balance}</p>
-          <DataTable columns={[]} data={[]} />
+          {profile && <DataTable columns={transactionColumns} data={profile?.transactions} />}
         </div>
 
         <div className="flex space-x-4">
